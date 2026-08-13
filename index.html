@@ -2150,9 +2150,9 @@ drawReg();
 
 /* ===== 납품구성 보드 ===== */
 let PLANS=[], PLQ={}, PLDIRTY=false, PLSEL=null;
-const PLPOOL="__pool", PLST=["냉동","상온"];
+const PLPOOL="__pool", PLST=["냉장","냉동","상온"];
 function plItem(no){ return D.items.find(x=>x.no===no); }
-function plStorage(x){ return (x&&x.st&&x.st.indexOf("상온")>=0)?"상온":"냉동"; }
+function plStorage(x){ const s=(x&&x.st)||""; if(s.indexOf("냉장")>=0) return "냉장"; if(s.indexOf("상온")>=0||s.indexOf("실온")>=0) return "상온"; return "냉동"; }
 function plKey(code,st){ return code+"|"+st; }
 function plList(code,st){ return (PLQ[plKey(code,st)]=PLQ[plKey(code,st)]||[]); }
 function plFind(no){ for(const k of Object.keys(PLQ)){ const i=PLQ[k].findIndex(r=>r.no===no); if(i>=0) return {k:k,i:i,row:PLQ[k][i]}; } return null; }
@@ -2175,8 +2175,8 @@ function plPool(){
 }
 function plZone(code,st,rows,locked){
  const s=plSum(rows);
- const tone = st==="냉동" ? "#EFF6FF" : "#FFFBEB";
- const ico  = st==="냉동" ? "❄️" : "☀️";
+ const tone = st==="냉동" ? "#EFF6FF" : (st==="냉장" ? "#F0FDFA" : "#FFFBEB");
+ const ico  = st==="냉동" ? "❄️" : (st==="냉장" ? "🧊" : "☀️");
  return `<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:11px;color:#6B7280;background:${tone};padding:4px 8px;border-radius:6px;margin-bottom:5px"><b style="color:#374151">${ico} ${st}</b><span>${s.n}건 · ${s.plt} PLT · ${KRW(s.krw)}</span></div><div class="pldrop" data-code="${code}" data-st="${st}" style="min-height:44px">${rows.map(function(r){return plCard(r,locked)}).join("")}</div></div>`;
 }
 function plCol(p){
@@ -2809,7 +2809,7 @@ $("#pmYes").onclick=async()=>{
 function refreshAll(){ try{drawBrand()}catch(e){} setTimeout(relang,80);
  fillBrands(); drawP(); drawQ();
  if(curC) pickCat(curC);
- drawKPI(); try{drawReg()}catch(e){} try{drawPlan()}catch(e){}
+ drawKPI(); try{drawReg()}catch(e){} try{ if(!PLDIRTY) loadPlans(); else drawPlan(); }catch(e){}
  catCards($("#dcat"),c=>{go("cat");pickCat(c)});
  catCards($("#ccat"),pickCat);
  if(curC) $$("#ccat .cat").forEach(b=>b.classList.toggle("on",b.dataset.c===curC));
