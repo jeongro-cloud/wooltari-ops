@@ -966,6 +966,7 @@ function fromDB(p,base){
   isNew:!!p.is_new, cdt:(p.created_at||"").slice(0,10),
   story:p.brand_story||"", full:p.desc_full||"", vari:p.variants||"", cook:p.cooking||"",
   nutri:p.nutrition||"", certs:p.certs||[], claims:p.label_claims||"", extra:p.extra_note||"", links:p.links||"",
+  pack:p.packaging||"", serv:p.serving_size||"", servn:p.servings_per||"", tihi:p.ti_hi||"", inote:p.internal_note||"",
   usp:(p.selling_points&&p.selling_points.length)?p.selling_points:(b.usp||[]),
   den:p.desc_en||b.den||"", dko:p.desc_ko||b.dko||"",
   docs:p.docs||b.docs||"", note:p.mmpa_note||b.note||"",
@@ -2345,10 +2346,11 @@ function plDetail(){
    +alloc
    +sec('규격')
    +row("카테고리",(x.c1?(D.cats.filter(function(c){return c.id===x.c1}).map(function(c){return c.ko})[0]||""):"")+(x.sub?" / "+x.sub:""))
-   +row("내용량",x.wt)+row("보관",x.st)+row("유통기한",x.shelf)+row("원산지",x.org)
+   +row("내용량",x.wt)+row("1회 제공량",x.serv,1)+row("제공 횟수",x.servn,1)+row("보관",x.st)+row("유통기한",x.shelf)+row("원산지",x.org)
    +sec('물류')
    +row("박스입수",x.upc?x.upc+" EA":"-",1)+row("카톤규격",x.cdim,1)
    +row("박스중량",x.ckg?x.ckg+" kg":"-",1)+row("CBM / CTN",x.cbm,1)
+   +row("포장 형태",x.pack)+row("팔레트 적재",x.tihi,1)
    +sec('식별 · 통관')
    +row("EAN 바코드",x.ean,1)+row("SKU",x.sku,1)+row("HS CODE",x.hs,1)+row("인코텀즈",x.inco)
    +sec('가격')
@@ -2366,6 +2368,7 @@ function plDetail(){
      if(x.claims) o+=sec('LABEL STATEMENTS')+para(x.claims);
      if(x.story)  o+=sec('BRAND')+para(x.story);
      if(x.extra)  o+=sec('ADDITIONAL')+para(x.extra);
+     if(x.inote&&isMaster()) o+=sec('INTERNAL NOTES / BUYER COMMENTS')+'<div style="font-size:12px;color:#374151;line-height:1.65;white-space:pre-wrap;background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:9px">'+E(x.inote)+'</div>';
      if(x.links)  o+=sec('참고 링크')+'<div style="font-size:11px;color:#6B7280;line-height:1.6;word-break:break-all;white-space:pre-wrap">'+E(x.links)+'</div>';
      return o;
    })()
