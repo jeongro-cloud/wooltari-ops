@@ -2158,10 +2158,7 @@ function stepper(p){
  const cur=STGS.indexOf(p.status||"제안");
  const cells=STGS.map(function(s,i){
   const on=i<=cur, c=STG[s];
-  return '<button type="button" data-stg="'+p.code+'|'+s+'" '+(isMaster()?"":"disabled")+
-   ' style="flex:1;padding:5px 2px;font-size:11px;font-weight:600;cursor:'+(isMaster()?"pointer":"default")+
-   ';border:1px solid '+(on?c[2]:"#E5E7EB")+';background:'+(on?c[1]:"#fff")+';color:'+(on?c[2]:"#9CA3AF")+
-   ';border-radius:'+(i===0?"7px 0 0 7px":(i===2?"0 7px 7px 0":"0"))+'">'+c[0]+'</button>';
+  return '<button type="button" data-stg="'+p.code+'|'+s+'" '+(isMaster()?"":"disabled")+' style="flex:1;padding:5px 2px;font-size:11px;font-weight:600;cursor:'+(isMaster()?"pointer":"default")+';border:1px solid '+(on?c[2]:"#E5E7EB")+';background:'+(on?c[1]:"#fff")+';color:'+(on?c[2]:"#9CA3AF")+';border-radius:'+(i===0?"7px 0 0 7px":(i===2?"0 7px 7px 0":"0"))+'">'+c[0]+'</button>';
  }).join("");
  return '<div style="display:flex;margin-bottom:8px">'+cells+'</div>';
 }
@@ -2194,7 +2191,6 @@ function plZone(code,st,rows,locked){
 }
 function plCol(p){
  const locked = p && p.status==="확정";
- const stg = p ? (p.status||"제안") : null;
  const code = p?p.code:PLPOOL;
  let rows={};
  PLST.forEach(function(st){ rows[st] = p ? plList(code,st) : plPool().filter(function(r){return plStorage(plItem(r.no))===st}); });
