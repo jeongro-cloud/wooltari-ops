@@ -579,8 +579,24 @@ body.pub #topOut, body.pub #sideOut{display:none!important}
      <select id="plCat" style="padding:8px 12px;border:1px solid #E5E7EB;border-radius:8px;font-size:13px"></select>
      <button id="plSave" class="gbtn" style="width:auto;padding:8px 18px">저장</button>
      <button id="plReload" class="gbtn" style="width:auto;padding:8px 18px;background:#fff;color:#6B7280;border:1px solid #E5E7EB">되돌리기</button>
+     <button id="plNew" class="gbtn" style="width:auto;padding:8px 16px;background:#fff;color:#B45309;border:1px solid #B45309">+ 회차 추가</button>
      <span id="plMsg" class="hint" style="margin:0"></span>
     </div>
+    <div id="plNewBox" style="display:none;border:1px solid #FDE68A;background:#FFFBEB;border-radius:10px;padding:12px;margin-bottom:12px">
+     <div style="font-size:12.5px;font-weight:700;color:#B45309;margin-bottom:8px">새 납품구성 만들기</div>
+     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px">
+      <label style="font-size:11px;color:#6B7280">회차 코드 *<input id="npCode" placeholder="PI-WTR0902" style="width:100%;padding:6px 8px;font-size:12px;border:1px solid #E5E7EB;border-radius:6px"></label>
+      <label style="font-size:11px;color:#6B7280">표시 이름<input id="npLabel" placeholder="비우면 코드와 동일" style="width:100%;padding:6px 8px;font-size:12px;border:1px solid #E5E7EB;border-radius:6px"></label>
+      <label style="font-size:11px;color:#6B7280">ETD<input id="npEtd" type="date" style="width:100%;padding:6px 8px;font-size:12px;border:1px solid #E5E7EB;border-radius:6px"></label>
+      <label style="font-size:11px;color:#6B7280">ETA<input id="npEta" type="date" style="width:100%;padding:6px 8px;font-size:12px;border:1px solid #E5E7EB;border-radius:6px"></label>
+      <label style="font-size:11px;color:#6B7280">컨테이너<input id="npCon" placeholder="40HQ x 1" style="width:100%;padding:6px 8px;font-size:12px;border:1px solid #E5E7EB;border-radius:6px"></label>
+      <label style="font-size:11px;color:#6B7280">POD<input id="npPod" placeholder="SYDNEY, AU" style="width:100%;padding:6px 8px;font-size:12px;border:1px solid #E5E7EB;border-radius:6px"></label>
+      <label style="font-size:11px;color:#6B7280;grid-column:1/-1">메모<input id="npNote" placeholder="2026년 호주향 울타리몰 컨테이너 · 3차" style="width:100%;padding:6px 8px;font-size:12px;border:1px solid #E5E7EB;border-radius:6px"></label>
+     </div>
+     <div style="display:flex;gap:8px;margin-top:10px">
+      <button id="npSave" class="gbtn" style="width:auto;padding:7px 18px">만들기</button>
+      <button id="npCancel" class="gbtn" style="width:auto;padding:7px 18px;background:#fff;color:#6B7280;border:1px solid #E5E7EB">취소</button>
+     </div></div>
     <div style="display:flex;gap:12px;align-items:flex-start">
      <div id="plBoard" style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;align-items:flex-start;flex:1;min-width:0"></div>
      <div id="plInfo" style="flex:none;width:390px;border:1px solid #E5E7EB;border-radius:14px;padding:0;background:#fff;max-height:82vh;overflow:auto;position:sticky;top:12px;box-shadow:0 1px 3px rgba(17,24,39,.06)"></div>
@@ -2225,7 +2241,7 @@ function plCard(r,locked,editable){
  const amt=plAmount(r);
  const inp=function(f,v,w,ph){ return `<input class="plq" data-no="${no}" data-f="${f}" value="${v==null?"":v}" placeholder="${ph}" draggable="false" style="width:${w}px;padding:3px 5px;font-size:11px;text-align:right;border:1px solid #E5E7EB;border-radius:5px;background:#fff;color:#374151">`; };
  const body = editable ? `<div style="display:flex;gap:4px;align-items:center;margin-top:5px;font-size:10px;color:#9CA3AF">${inp("plt",r.plt,44,"PLT")}<span>PLT</span>${inp("ea",r.ea,60,"EA")}<span>EA</span>${inp("amt",r.amt==null?(amt||""):r.amt,88,"금액")}<span>원</span></div>` : `<div style="font-size:11px;color:#6B7280;margin-top:2px">${r.plt!=null?`${r.plt} PLT · ${(r.ea||0).toLocaleString()} EA · ${KRW(amt)}`:`${E(BNM(x)||"")} · ${E(x.sub||"")}`}</div>`;
- return `<div class="plcard" ${locked?"":'draggable="true"'} data-no="${no}" style="background:#fff;border:1px solid ${PLSEL===no?"#B45309":"#E5E7EB"};border-radius:8px;padding:7px;margin-bottom:6px;cursor:${locked?"pointer":"grab"}"><div style="display:flex;gap:8px;align-items:center">${img}<div style="min-width:0;flex:1"><div style="font-size:12px;font-weight:600;color:#111827;line-height:1.35;word-break:keep-all">${String(no).padStart(2,"0")} · ${E(x.ko)}</div><div style="font-size:10.5px;color:#9CA3AF;margin-top:1px">${E(BNM(x)||"")} · ${x.pkrw?KRW(x.pkrw)+"/EA":"단가없음"}</div></div></div>${body}</div>`;
+ return `<div class="plcard" ${locked?"":'draggable="true"'} data-no="${no}" style="background:#fff;border:1px solid ${PLSEL===no?"#B45309":"#E5E7EB"};border-radius:8px;padding:7px;margin-bottom:6px;cursor:${locked?"pointer":"grab"}"><div style="display:flex;gap:8px;align-items:center">${img}<div style="min-width:0;flex:1"><div style="font-size:12px;font-weight:600;color:#111827;line-height:1.35;word-break:keep-all">${String(no).padStart(2,"0")} · ${E(x.ko)}</div><div style="font-size:10.5px;color:#9CA3AF;margin-top:1px">${E(BNM(x)||"")} · ${x.pkrw?KRW(x.pkrw)+"/EA":"단가없음"}</div></div>${editable?`<button type="button" class="plout" data-no="${no}" title="대기 목록으로 빼기" style="flex:none;width:22px;height:22px;border-radius:6px;border:1px solid #E5E7EB;background:#fff;color:#9CA3AF;font-size:13px;line-height:1;cursor:pointer">×</button>`:""}</div>${body}</div>`;
 }
 function plPool(){
  const used=new Set(); Object.keys(PLQ).forEach(k=>PLQ[k].forEach(r=>used.add(r.no)));
@@ -2246,7 +2262,7 @@ function plCol(p){
  const all=rows["냉동"].concat(rows["상온"]);
  const s=plSum(all);
  const head = p
-  ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b style="font-size:13px;color:#111827">${E(p.label)}</b><span style="font-size:11px;padding:2px 8px;border-radius:99px;background:${STG[p.status||"제안"][1]};color:${STG[p.status||"제안"][2]}">${STG[p.status||"제안"][0]}</span></div>${stepper(p)}<div style="display:grid;grid-template-columns:auto 1fr auto 1fr;gap:5px 7px;align-items:center;font-size:10.5px;color:#9CA3AF;margin:2px 0 9px"><span>ETD</span><input class="plmeta" data-code="${p.code}" data-f="etd" type="date" value="${p.etd||''}" ${isMaster()?"":"readonly"} style="width:100%;padding:3px 4px;font-size:11px;border:1px solid #E5E7EB;border-radius:5px"><span>ETA</span><input class="plmeta" data-code="${p.code}" data-f="eta" type="date" value="${p.eta||''}" ${isMaster()?"":"readonly"} style="width:100%;padding:3px 4px;font-size:11px;border:1px solid #E5E7EB;border-radius:5px"><span>컨테이너</span><input class="plmeta" data-code="${p.code}" data-f="container" value="${E(p.container||'')}" placeholder="40HQ x 1" ${isMaster()?"":"readonly"} style="width:100%;padding:3px 4px;font-size:11px;border:1px solid #E5E7EB;border-radius:5px"><span>POD</span><input class="plmeta" data-code="${p.code}" data-f="pod" value="${E(p.pod||'')}" placeholder="SYDNEY, AU" ${isMaster()?"":"readonly"} style="width:100%;padding:3px 4px;font-size:11px;border:1px solid #E5E7EB;border-radius:5px"></div><div style="font-size:11px;color:#9CA3AF;margin-bottom:6px">${E(p.note||"")}</div><div style="font-size:12px;color:#111827;font-weight:600;margin-bottom:2px">${KRW(s.krw)}</div><div style="font-size:11px;color:#6B7280;margin-bottom:8px">${s.n}건 · ${s.plt} PLT · ${s.units.toLocaleString()} EA · CBM ${s.cbm}</div>`
+  ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b style="font-size:13px;color:#111827">${E(p.label)}</b><span style="display:flex;gap:5px;align-items:center"><span style="font-size:11px;padding:2px 8px;border-radius:99px;background:${STG[p.status||"제안"][1]};color:${STG[p.status||"제안"][2]}">${STG[p.status||"제안"][0]}</span>${(isMaster()&&p.status!=="확정")?`<button type="button" class="pldel" data-code="${p.code}" title="회차 삭제" style="width:22px;height:22px;border-radius:6px;border:1px solid #FECACA;background:#fff;color:#DC2626;font-size:12px;line-height:1;cursor:pointer">🗑</button>`:""}</span></div>${stepper(p)}<div style="display:grid;grid-template-columns:auto 1fr auto 1fr;gap:5px 7px;align-items:center;font-size:10.5px;color:#9CA3AF;margin:2px 0 9px"><span>ETD</span><input class="plmeta" data-code="${p.code}" data-f="etd" type="date" value="${p.etd||''}" ${isMaster()?"":"readonly"} style="width:100%;padding:3px 4px;font-size:11px;border:1px solid #E5E7EB;border-radius:5px"><span>ETA</span><input class="plmeta" data-code="${p.code}" data-f="eta" type="date" value="${p.eta||''}" ${isMaster()?"":"readonly"} style="width:100%;padding:3px 4px;font-size:11px;border:1px solid #E5E7EB;border-radius:5px"><span>컨테이너</span><input class="plmeta" data-code="${p.code}" data-f="container" value="${E(p.container||'')}" placeholder="40HQ x 1" ${isMaster()?"":"readonly"} style="width:100%;padding:3px 4px;font-size:11px;border:1px solid #E5E7EB;border-radius:5px"><span>POD</span><input class="plmeta" data-code="${p.code}" data-f="pod" value="${E(p.pod||'')}" placeholder="SYDNEY, AU" ${isMaster()?"":"readonly"} style="width:100%;padding:3px 4px;font-size:11px;border:1px solid #E5E7EB;border-radius:5px"></div><div style="font-size:11px;color:#9CA3AF;margin-bottom:6px">${E(p.note||"")}</div><div style="font-size:12px;color:#111827;font-weight:600;margin-bottom:2px">${KRW(s.krw)}</div><div style="font-size:11px;color:#6B7280;margin-bottom:8px">${s.n}건 · ${s.plt} PLT · ${s.units.toLocaleString()} EA · CBM ${s.cbm}</div>`
   : `<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px"><b style="font-size:13px;color:#111827">대기 목록</b><span style="font-size:12px;color:#6B7280">${s.n}건</span></div><div style="font-size:11px;color:#9CA3AF;margin-bottom:8px">아직 어느 회차에도 없는 제품</div>`;
  return `<div class="plcol" style="flex:none;width:360px;background:${p?"#fff":"#F9FAFB"};border:1px solid ${locked?"#BBF7D0":"#E5E7EB"};border-radius:10px;padding:10px">${head}${PLST.map(function(st){return plZone(code,st,rows[st],locked)}).join("")}</div>`;
 }
@@ -2352,6 +2368,22 @@ function plBind(){
    drag=null; drawPlan();
   };
  });
+ document.querySelectorAll("button.plout").forEach(function(b){
+  b.onmousedown=function(e){ e.stopPropagation(); };
+  b.onclick=function(e){ e.stopPropagation();
+   const no=+b.dataset.no, f=plFind(no); if(!f) return;
+   PLQ[f.k].splice(f.i,1); PLDIRTY=true;
+   msg("#plMsg","#"+no+" 제외 — 저장을 눌러주세요."); drawPlan();
+  };
+ });
+ document.querySelectorAll("button.pldel").forEach(function(b){
+  b.onclick=async function(e){ e.stopPropagation();
+   const code=b.dataset.code;
+   if(!confirm(code+" 회차를 삭제할까요?\n배정된 품목은 대기 목록으로 돌아갑니다.")) return;
+   try{ const r=await api({action:"plan_delete",code:code}); msg("#plMsg",r.message||"삭제했습니다."); await loadPlans(); }
+   catch(e2){ msg("#plMsg","삭제 실패 — "+e2.message,1); }
+  };
+ });
  document.querySelectorAll("input.plq").forEach(function(el){
   el.onmousedown=function(e){ e.stopPropagation(); };
   el.onclick=function(e){ e.stopPropagation(); };
@@ -2405,6 +2437,23 @@ async function loadPlans(){
  }catch(e){ msg("#plMsg","불러오기 실패 — "+e.message,1); }
 }
 if($("#plSave")) $("#plSave").onclick=async function(){ if(!isMaster()){ msg("#plMsg","마스터만 저장할 수 있습니다.",1); return; } try{ for(const p of PLANS){ if(p.status==="확정") continue; let rows=[]; PLST.forEach(function(st){ plList(p.code,st).forEach(function(r){ rows.push({row_no:r.no,pos:rows.length,qty_plt:r.plt,qty_units:r.ea,amount_krw:r.amt}); }); }); await api({action:"plan_save",code:p.code,rows:rows}); } PLDIRTY=false; msg("#plMsg","저장했습니다."); }catch(e){ msg("#plMsg","저장 실패 — "+e.message,1); } };
+if($("#plNew")) $("#plNew").onclick=function(){ const b=$("#plNewBox"); if(!b) return;
+ if(!isMaster()){ msg("#plMsg","마스터만 회차를 만들 수 있습니다.",1); return; }
+ b.style.display = b.style.display==="none" ? "" : "none"; };
+if($("#npCancel")) $("#npCancel").onclick=function(){ $("#plNewBox").style.display="none"; };
+if($("#npSave")) $("#npSave").onclick=async function(){
+ const code=($("#npCode").value||"").trim();
+ if(!code){ msg("#plMsg","회차 코드를 입력하세요.",1); return; }
+ if(PLANS.some(function(p){return p.code===code})){ msg("#plMsg","이미 있는 회차 코드입니다.",1); return; }
+ const plan={code:code, label:($("#npLabel").value||"").trim()||code,
+  etd:$("#npEtd").value||"", eta:$("#npEta").value||"",
+  container:($("#npCon").value||"").trim(), pod:($("#npPod").value||"").trim(),
+  note:($("#npNote").value||"").trim(), sort:(PLANS.length?99:1)};
+ try{ await api({action:"plan_upsert",plan:plan});
+  ["npCode","npLabel","npEtd","npEta","npCon","npPod","npNote"].forEach(function(id){ const el=$("#"+id); if(el) el.value=""; });
+  $("#plNewBox").style.display="none"; msg("#plMsg",code+" 회차를 만들었습니다."); await loadPlans();
+ }catch(e){ msg("#plMsg","생성 실패 — "+e.message,1); }
+};
 if($("#plReload")) $("#plReload").onclick=function(){loadPlans()};
 if($("#plSearch")) $("#plSearch").oninput=function(){drawPlan()};
 if($("#plCat")) $("#plCat").onchange=function(){drawPlan()};
