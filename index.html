@@ -964,6 +964,8 @@ function fromDB(p,base){
   cdim:(p.case_l_mm&&p.case_w_mm&&p.case_h_mm)?`${p.case_l_mm}×${p.case_w_mm}×${p.case_h_mm} mm`:"",
   im:p.image_data||p.image_url||b.im||"", im2:p.image2_data||p.image2_url||b.im2||"",
   isNew:!!p.is_new, cdt:(p.created_at||"").slice(0,10),
+  story:p.brand_story||"", full:p.desc_full||"", vari:p.variants||"", cook:p.cooking||"",
+  nutri:p.nutrition||"", certs:p.certs||[], claims:p.label_claims||"", extra:p.extra_note||"", links:p.links||"",
   usp:(p.selling_points&&p.selling_points.length)?p.selling_points:(b.usp||[]),
   den:p.desc_en||b.den||"", dko:p.desc_ko||b.dko||"",
   docs:p.docs||b.docs||"", note:p.mmpa_note||b.note||"",
@@ -2352,7 +2354,21 @@ function plDetail(){
    +sec('가격')
    +row("공급단가",x.pkrw?KRW(x.pkrw):"-",1)
    +row("환산",x.pkrw?USD(x.pkrw)+" · "+AUD(x.pkrw):"-",1)
-   +(x.usp&&x.usp.length?sec('셀링포인트')+x.usp.map(function(u){return '<div style="font-size:12px;color:#374151;padding:4px 0;line-height:1.5">· '+E(u)+'</div>'}).join(""):"")
+   +(x.usp&&x.usp.length?sec('PRODUCT USP')+x.usp.map(function(u){return '<div style="font-size:12px;color:#374151;padding:4px 0;line-height:1.55">· '+E(u)+'</div>'}).join(""):"")
+   +(function(){
+     const para=function(t){ return '<div style="font-size:12px;color:#374151;line-height:1.65;white-space:pre-wrap;padding:2px 0">'+E(t)+'</div>'; };
+     let o='';
+     if(x.full)   o+=sec('PRODUCT DESCRIPTION')+para(x.full);
+     if(x.vari)   o+=sec('FLAVOR VARIANTS')+para(x.vari);
+     if(x.cook)   o+=sec('조리방법')+para(x.cook);
+     if(x.nutri)  o+=sec('NUTRITION FACTS')+para(x.nutri);
+     if(x.certs&&x.certs.length) o+=sec('CERTIFICATIONS')+'<div style="display:flex;flex-wrap:wrap;gap:5px;padding:3px 0">'+x.certs.map(function(c){return '<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#ECFDF5;color:#15803D;border:1px solid #BBF7D0">'+E(c)+'</span>'}).join('')+'</div>';
+     if(x.claims) o+=sec('LABEL STATEMENTS')+para(x.claims);
+     if(x.story)  o+=sec('BRAND')+para(x.story);
+     if(x.extra)  o+=sec('ADDITIONAL')+para(x.extra);
+     if(x.links)  o+=sec('참고 링크')+'<div style="font-size:11px;color:#6B7280;line-height:1.6;word-break:break-all;white-space:pre-wrap">'+E(x.links)+'</div>';
+     return o;
+   })()
   +'</div>';
 }
 function plBind(){
