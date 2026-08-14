@@ -1066,7 +1066,12 @@ document.addEventListener("DOMContentLoaded",()=>{
 });
 
 (async function autoLogin(){
- let t=null; try{ t=localStorage.getItem("wooltari_token"); }catch(_){}
+ let t=null; try{
+  t=localStorage.getItem("wooltari_token");
+  const keep=localStorage.getItem("wooltari_keep")==="1";
+  const same=sessionStorage.getItem("wooltari_session")==="1";
+  if(t&&!keep&&!same){ localStorage.removeItem("wooltari_token"); t=null; }
+ }catch(_){}
  if(!t) return;
  const e=document.querySelector("#lerr");
  if(e){ e.className="gerr ok"; e.textContent="자동 로그인 중…"; }
@@ -1116,8 +1121,9 @@ async function doLogin(){
   TOKEN=r.token;
   try{
    const keep=$("#lkeep")&&$("#lkeep").checked;
-   if(keep) localStorage.setItem("wooltari_token", r.token);
-   else localStorage.removeItem("wooltari_token");
+   localStorage.setItem("wooltari_token", r.token);
+   sessionStorage.setItem("wooltari_session","1");
+   if(keep) localStorage.setItem("wooltari_keep","1"); else localStorage.removeItem("wooltari_keep");
   }catch(_){}
   ME={id:r.me.username, co:r.me.company, nm:r.me.manager, tel:r.me.tel||"", ml:r.me.email||"",
       role:r.me.role, price:!!r.me.price_view, act:true, uid:r.me.id, mt:r.me.member_type||"buyer", brand:r.me.brand||null};
@@ -1222,7 +1228,7 @@ $("#loYes").onclick=()=>{
  $("#lomodal").classList.remove("on");
  if(!OFFLINE) api({action:"logout"}).catch(()=>{});
  TOKEN=null; OFFLINE=false; SERVER_OK=false;
- try{localStorage.removeItem("wooltari_token");}catch(_){}
+ try{localStorage.removeItem("wooltari_token");localStorage.removeItem("wooltari_keep");sessionStorage.removeItem("wooltari_session");}catch(_){}
  {const ob=$("#offBar"); if(ob) ob.style.display="none";}
  ME=null; PREVIEW=false;
  $("#prevChk").checked=false; $("#prevBar").style.display="none";
