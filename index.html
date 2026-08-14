@@ -2243,7 +2243,7 @@ function plCard(r,locked,editable){
  const amt=plAmount(r);
  const inp=function(f,v,w,ph){ return `<input class="plq" data-no="${no}" data-f="${f}" value="${v==null?"":v}" placeholder="${ph}" draggable="false" style="width:100%;padding:3px 5px;font-size:11px;text-align:right;border:1px solid #E5E7EB;border-radius:5px;background:#fff;color:#374151">`; };
  const body = editable
-  ? `<div style="display:grid;grid-template-columns:auto 1fr auto 1fr;gap:4px 6px;align-items:center;margin-top:6px;font-size:10px;color:#9CA3AF"><span>PLT</span>${inp("plt",r.plt,0,"0")}<span>수량</span>${inp("ea",r.ea,0,"EA")}<span>단가</span>${inp("unit",r.unit==null?((x.pkrw||"")):r.unit,0,"원/EA")}<span>합계</span>${inp("amt",r.amt==null?(amt||""):r.amt,0,"원")}</div><div style="text-align:right;font-size:12px;font-weight:700;color:#B45309;margin-top:5px">${KRW(amt)}</div>`
+  ? `<div style="display:grid;grid-template-columns:auto 1fr auto 1fr;gap:4px 6px;align-items:center;margin-top:6px;font-size:10px;color:#9CA3AF"><span title="팔레트 수 — 0.5, 0.7 등 소수 입력 가능">PLT</span>${inp("plt",r.plt,0,"0.5")}<span>수량</span>${inp("ea",r.ea,0,"EA")}<span>단가</span>${inp("unit",r.unit==null?((x.pkrw||"")):r.unit,0,"원/EA")}<span>합계</span>${inp("amt",r.amt==null?(amt||""):r.amt,0,"원")}</div><div style="text-align:right;font-size:12px;font-weight:700;color:#B45309;margin-top:5px">${KRW(amt)}</div>`
   : `<div style="font-size:11px;color:#6B7280;margin-top:2px">${r.plt!=null?`${r.plt} PLT · ${(r.ea||0).toLocaleString()} EA @ ${KRW(plUnit(r))} = <b style="color:#374151">${KRW(amt)}</b>`:`${E(BNM(x)||"")} · ${E(x.sub||"")}`}</div>`;
  return `<div class="plcard" ${locked?"":'draggable="true"'} data-no="${no}" style="background:#fff;border:1px solid ${PLSEL===no?"#B45309":"#E5E7EB"};border-radius:8px;padding:7px;margin-bottom:6px;cursor:${locked?"pointer":"grab"}"><div style="display:flex;gap:8px;align-items:center">${img}<div style="min-width:0;flex:1"><div style="font-size:12px;font-weight:600;color:#111827;line-height:1.35;word-break:keep-all">${String(no).padStart(2,"0")} · ${E(x.ko)}</div><div style="font-size:10.5px;color:#9CA3AF;margin-top:1px">${E(BNM(x)||"")} · ${x.pkrw?KRW(x.pkrw)+"/EA":"단가없음"}</div></div>${editable?`<button type="button" class="plout" data-no="${no}" title="대기 목록으로 빼기" style="flex:none;width:22px;height:22px;border-radius:6px;border:1px solid #E5E7EB;background:#fff;color:#9CA3AF;font-size:13px;line-height:1;cursor:pointer">×</button>`:""}</div>${body}</div>`;
 }
@@ -2397,9 +2397,14 @@ function plBind(){
    const raw=(el.value||"").replace(/[^0-9.]/g,"");
    const v=raw===""?null:parseFloat(raw);
    fd.row[f]=v;
-   const x=plItem(no);
-   if(f==="plt"&&v!=null&&x&&x.upc) fd.row.ea=Math.round(v*x.upc);
-   if(f!=="amt"){ const u=plUnit(fd.row); if(u&&fd.row.ea!=null) fd.row.amt=Math.round(u*fd.row.ea); }
+   const x=plItem(no), R=fd.row;
+   if(f==="plt"){
+    const base = R.upl || (x&&x.upc) || null;
+    if(v!=null&&base) R.ea=Math.round(v*base);
+    if(v==null) R.ea=null;
+   }
+   if(f==="ea"&&v!=null&&R.plt) R.upl=Math.round(v/R.plt);
+   if(f!=="amt"){ const u=plUnit(R); R.amt=(u&&R.ea!=null)?Math.round(u*R.ea):null; }
    PLDIRTY=true; msg("#plMsg","변경됨 — 저장을 눌러주세요."); drawPlan();
   };
  });
@@ -2450,7 +2455,8 @@ async function loadPlans(){
   (r.items||[]).forEach(function(i){
    const x=plItem(i.row_no); if(!x) return;
    const k=plKey(i.plan_code,plStorage(x)); if(!PLQ[k]) PLQ[k]=[];
-   PLQ[k].push({no:i.row_no, plt:i.qty_plt!=null?+i.qty_plt:null, ea:i.qty_units!=null?+i.qty_units:null, unit:i.unit_krw!=null?+i.unit_krw:null, amt:i.amount_krw!=null?+i.amount_krw:null});
+   const _p=i.qty_plt!=null?+i.qty_plt:null, _e=i.qty_units!=null?+i.qty_units:null;
+   PLQ[k].push({no:i.row_no, plt:_p, ea:_e, upl:(_p&&_e)?Math.round(_e/_p):null, unit:i.unit_krw!=null?+i.unit_krw:null, amt:i.amount_krw!=null?+i.amount_krw:null});
   });
   PLDIRTY=false; drawPlan();
  }catch(e){ msg("#plMsg","불러오기 실패 — "+e.message,1); }
