@@ -583,7 +583,7 @@ body.pub #topOut, body.pub #sideOut{display:none!important}
     </div>
     <div style="display:flex;gap:12px;align-items:flex-start">
      <div id="plBoard" style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;align-items:flex-start;flex:1;min-width:0"></div>
-     <div id="plInfo" style="flex:none;width:250px;border:1px solid #E5E7EB;border-radius:10px;padding:12px;background:#fff;max-height:70vh;overflow:auto"></div>
+     <div id="plInfo" style="flex:none;width:280px;border:1px solid #E5E7EB;border-radius:10px;padding:12px;background:#fff;max-height:70vh;overflow:auto"></div>
     </div>
    </div></div>
  </div></section>
@@ -2152,6 +2152,19 @@ drawReg();
 let PLANS=[], PLQ={}, PLDIRTY=false, PLSEL=null;
 const PLPOOL="__pool", PLST=["냉장","냉동","상온"];
 function plItem(no){ return D.items.find(x=>x.no===no); }
+const STG={"제안":["제품제안","#EFF6FF","#1D4ED8"],"협의":["제품협의","#FEF3C7","#B45309"],"확정":["납품확정","#DCFCE7","#15803D"]};
+const STGS=["제안","협의","확정"];
+function stepper(p){
+ const cur=STGS.indexOf(p.status||"제안");
+ const cells=STGS.map(function(s,i){
+  const on=i<=cur, c=STG[s];
+  return '<button type="button" data-stg="'+p.code+'|'+s+'" '+(isMaster()?"":"disabled")+
+   ' style="flex:1;padding:5px 2px;font-size:11px;font-weight:600;cursor:'+(isMaster()?"pointer":"default")+
+   ';border:1px solid '+(on?c[2]:"#E5E7EB")+';background:'+(on?c[1]:"#fff")+';color:'+(on?c[2]:"#9CA3AF")+
+   ';border-radius:'+(i===0?"7px 0 0 7px":(i===2?"0 7px 7px 0":"0"))+'">'+c[0]+'</button>';
+ }).join("");
+ return '<div style="display:flex;margin-bottom:8px">'+cells+'</div>';
+}
 function plStorage(x){ const s=(x&&x.st)||""; if(s.indexOf("냉장")>=0) return "냉장"; if(s.indexOf("상온")>=0||s.indexOf("실온")>=0) return "상온"; return "냉동"; }
 function plKey(code,st){ return code+"|"+st; }
 function plList(code,st){ return (PLQ[plKey(code,st)]=PLQ[plKey(code,st)]||[]); }
@@ -2166,7 +2179,7 @@ function plCard(r,locked){
  const amt=plAmount(r);
  const line2 = r.plt!=null ? `${r.plt} PLT · ${((r.plt||0)*(r.upl||0)).toLocaleString()} EA` : `${E(BNM(x)||"")} · ${E(x.sub||"")}`;
  const right = amt ? KRW(amt) : (x.pkrw?KRW(x.pkrw)+"<span style='color:#9CA3AF'>/EA</span>":'<span style="color:#D97706">단가없음</span>');
- return `<div class="plcard" ${locked?"":'draggable="true"'} data-no="${no}" style="display:flex;gap:8px;align-items:center;background:#fff;border:1px solid ${PLSEL===no?"#B45309":"#E5E7EB"};border-radius:8px;padding:7px;margin-bottom:6px;cursor:${locked?"pointer":"grab"}">${img}<div style="min-width:0;flex:1"><div style="font-size:12px;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${String(no).padStart(2,"0")} · ${E(x.ko)}</div><div style="font-size:11px;color:#6B7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${line2}</div></div><div style="font-size:11px;color:#374151;text-align:right;flex:none">${right}</div></div>`;
+ return `<div class="plcard" ${locked?"":'draggable="true"'} data-no="${no}" style="display:flex;gap:8px;align-items:center;background:#fff;border:1px solid ${PLSEL===no?"#B45309":"#E5E7EB"};border-radius:8px;padding:7px;margin-bottom:6px;cursor:${locked?"pointer":"grab"}">${img}<div style="min-width:0;flex:1"><div style="font-size:12px;font-weight:600;color:#111827;line-height:1.35;word-break:keep-all">${String(no).padStart(2,"0")} · ${E(x.ko)}</div><div style="font-size:11px;color:#6B7280;margin-top:2px">${line2}</div></div><div style="font-size:11px;color:#374151;text-align:right;flex:none">${right}</div></div>`;
 }
 function plPool(){
  const used=new Set(); Object.keys(PLQ).forEach(k=>PLQ[k].forEach(r=>used.add(r.no)));
@@ -2181,15 +2194,16 @@ function plZone(code,st,rows,locked){
 }
 function plCol(p){
  const locked = p && p.status==="확정";
+ const stg = p ? (p.status||"제안") : null;
  const code = p?p.code:PLPOOL;
  let rows={};
  PLST.forEach(function(st){ rows[st] = p ? plList(code,st) : plPool().filter(function(r){return plStorage(plItem(r.no))===st}); });
  const all=rows["냉동"].concat(rows["상온"]);
  const s=plSum(all);
  const head = p
-  ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px"><b style="font-size:13px;color:#111827">${E(p.label)}</b><span style="font-size:11px;padding:2px 8px;border-radius:99px;background:${locked?"#DCFCE7":"#F3F4F6"};color:${locked?"#15803D":"#6B7280"}">${locked?"확정":"검토중"}</span></div><div style="font-size:11px;color:#9CA3AF;margin-bottom:6px">${E(p.note||"")}</div><div style="font-size:12px;color:#111827;font-weight:600;margin-bottom:2px">${KRW(s.krw)}</div><div style="font-size:11px;color:#6B7280;margin-bottom:8px">${s.n}건 · ${s.plt} PLT · ${s.units.toLocaleString()} EA · CBM ${s.cbm}</div>${isMaster()?`<button data-lock="${code}" style="width:100%;margin-bottom:8px;padding:6px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid ${locked?"#E5E7EB":"#15803D"};background:${locked?"#fff":"#15803D"};color:${locked?"#6B7280":"#fff"}">${locked?"확정 해제":"확정하기"}</button>`:""}`
+  ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b style="font-size:13px;color:#111827">${E(p.label)}</b><span style="font-size:11px;padding:2px 8px;border-radius:99px;background:${STG[p.status||"제안"][1]};color:${STG[p.status||"제안"][2]}">${STG[p.status||"제안"][0]}</span></div>${stepper(p)}<div style="font-size:11px;color:#9CA3AF;margin-bottom:6px">${E(p.note||"")}</div><div style="font-size:12px;color:#111827;font-weight:600;margin-bottom:2px">${KRW(s.krw)}</div><div style="font-size:11px;color:#6B7280;margin-bottom:8px">${s.n}건 · ${s.plt} PLT · ${s.units.toLocaleString()} EA · CBM ${s.cbm}</div>`
   : `<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px"><b style="font-size:13px;color:#111827">대기 목록</b><span style="font-size:12px;color:#6B7280">${s.n}건</span></div><div style="font-size:11px;color:#9CA3AF;margin-bottom:8px">아직 어느 회차에도 없는 제품</div>`;
- return `<div class="plcol" style="flex:none;width:290px;background:${p?"#fff":"#F9FAFB"};border:1px solid ${locked?"#BBF7D0":"#E5E7EB"};border-radius:10px;padding:10px">${head}${PLST.map(function(st){return plZone(code,st,rows[st],locked)}).join("")}</div>`;
+ return `<div class="plcol" style="flex:none;width:360px;background:${p?"#fff":"#F9FAFB"};border:1px solid ${locked?"#BBF7D0":"#E5E7EB"};border-radius:10px;padding:10px">${head}${PLST.map(function(st){return plZone(code,st,rows[st],locked)}).join("")}</div>`;
 }
 function drawPlan(){
  if(!$("#plBoard")) return;
@@ -2214,7 +2228,7 @@ function plDetail(){
 function plBind(){
  let drag=null;
  document.querySelectorAll(".plcard").forEach(function(el){
-  el.onclick=function(){ PLSEL=+el.dataset.no; drawPlan(); };
+  el.onclick=function(){ PLSEL=+el.dataset.no; plDetail(); try{open_(PLSEL)}catch(_){} };
   el.ondragstart=function(e){ drag=+el.dataset.no; e.dataTransfer.effectAllowed="move"; el.style.opacity=".4"; };
   el.ondragend=function(){ el.style.opacity="1"; };
  });
@@ -2236,12 +2250,14 @@ function plBind(){
    drag=null; drawPlan();
   };
  });
- document.querySelectorAll("button[data-lock]").forEach(function(b){
+ document.querySelectorAll("button[data-stg]").forEach(function(b){
   b.onclick=async function(){
-   const code=b.dataset.lock, p=PLANS.find(function(q){return q.code===code});
-   const next=p.status==="확정"?"검토중":"확정";
+   const parts=b.dataset.stg.split("|"), code=parts[0], next=parts[1];
+   const p=PLANS.find(function(q){return q.code===code}); if(!p) return;
+   if(p.status===next) return;
    if(next==="확정"&&PLDIRTY){ msg("#plMsg","저장하지 않은 변경이 있습니다. 먼저 저장하세요.",1); return; }
-   try{ await api({action:"plan_status",code:code,status:next}); p.status=next; msg("#plMsg",code+" — "+next); drawPlan(); }
+   try{ await api({action:"plan_status",code:code,status:next}); p.status=next;
+    msg("#plMsg",code+" — "+STG[next][0]); drawPlan(); }
    catch(e){ msg("#plMsg","실패 — "+e.message,1); }
   };
  });
