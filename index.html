@@ -2214,7 +2214,7 @@ function drawPlan(){
   byStg[k].krw+=s.krw; byStg[k].n+=s.n; byStg[k].plt+=Math.round(s.plt*100)/100; });
  const stgCard=function(s,cls){ const b=byStg[s], c=STG[s];
   return '<div class="kpi '+cls+'"><span>'+c[0]+'</span><b style="font-size:16px">'+KRW(b.krw)+'</b><i>'+b.n+'건 · '+(Math.round(b.plt*100)/100)+' PLT</i></div>'; };
- $("#plKpi").innerHTML=`<div class="kpi"><span>회차</span><b>${PLANS.length}</b><i>제안 ${byStg["제안"].n?PLANS.filter(function(p){return (p.status||"제안")==="제안"}).length:0} · 협의 ${PLANS.filter(function(p){return p.status==="협의"}).length} · 확정 ${PLANS.filter(function(p){return p.status==="확정"}).length}</i></div><div class="kpi blu"><span>배정 품목</span><b>${t.n}</b><i>미확정 ${byStg["제안"].n+byStg["협의"].n} · 확정 ${byStg["확정"].n} · ${t.plt} PLT</i></div>${stgCard("제안","")}${stgCard("협의","")}${stgCard("확정","grn")}<div class="kpi"><span>미확정 합계</span><b style="font-size:16px">${KRW(byStg["제안"].krw+byStg["협의"].krw)}</b><i>제안+협의 ${byStg["제안"].n+byStg["협의"].n}건 · 확정 제외</i></div>`;
+ $("#plKpi").innerHTML=`<div class="kpi"><span>회차</span><b>${PLANS.length}</b><i>제안 ${byStg["제안"].n?PLANS.filter(function(p){return (p.status||"제안")==="제안"}).length:0} · 협의 ${PLANS.filter(function(p){return p.status==="협의"}).length} · 확정 ${PLANS.filter(function(p){return p.status==="확정"}).length}</i></div><div class="kpi blu"><span>배정 품목</span><b>${t.n}</b><i>미확정 ${byStg["제안"].n+byStg["협의"].n} · 확정 ${byStg["확정"].n} · ${t.plt} PLT</i></div>${stgCard("제안","")}${stgCard("협의","")}${stgCard("확정","grn")}<div class="kpi"><span>협의금액</span><b style="font-size:16px">${KRW(byStg["제안"].krw+byStg["협의"].krw)}</b><i>${byStg["제안"].n+byStg["협의"].n}건 · 확정 전 진행분</i></div>`;
  plBind(); plDetail();
 }
 function plDetail(){
