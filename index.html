@@ -2158,7 +2158,7 @@ function stepper(p){
  const cur=STGS.indexOf(p.status||"제안");
  const cells=STGS.map(function(s,i){
   const on=i<=cur, c=STG[s];
-  return '<button type="button" data-stg="'+p.code+'|'+s+'" '+(isMaster()?"":"disabled")+' style="flex:1;padding:5px 2px;font-size:11px;font-weight:600;cursor:'+(isMaster()?"pointer":"default")+';border:1px solid '+(on?c[2]:"#E5E7EB")+';background:'+(on?c[1]:"#fff")+';color:'+(on?c[2]:"#9CA3AF")+';border-radius:'+(i===0?"7px 0 0 7px":(i===2?"0 7px 7px 0":"0"))+'">'+((s==="확정"&&(p.status||"제안")==="확정")?"확정 완료":c[0])+'</button>';
+  return '<button type="button" data-stg="'+p.code+'|'+s+'" '+(isMaster()?"":"disabled")+' style="flex:1;padding:5px 2px;font-size:11px;font-weight:600;cursor:'+(isMaster()?"pointer":"default")+';border:1px solid '+(on?c[2]:"#E5E7EB")+';background:'+(on?c[1]:"#fff")+';color:'+(on?c[2]:"#9CA3AF")+';border-radius:'+(i===0?"7px 0 0 7px":(i===2?"0 7px 7px 0":"0"))+'">'+c[0]+'</button>';
  }).join("");
  return '<div style="display:flex;margin-bottom:8px">'+cells+'</div>';
 }
@@ -2208,7 +2208,13 @@ function drawPlan(){
  $("#plBoard").innerHTML=plCol(null)+PLANS.map(function(p){return plCol(p)}).join("");
  let all=[]; Object.keys(PLQ).forEach(function(k){all=all.concat(PLQ[k])});
  const t=plSum(all);
- $("#plKpi").innerHTML=`<div class="kpi"><span>회차</span><b>${PLANS.length}</b><i>${PLANS.filter(function(p){return p.status==="확정"}).length}건 확정</i></div><div class="kpi blu"><span>배정 품목</span><b>${t.n}</b><i>전체 ${D.items.length}개 중</i></div><div class="kpi"><span>총 파렛트</span><b>${t.plt}</b><i>CBM ${t.cbm}</i></div><div class="kpi grn"><span>공급금액</span><b style="font-size:17px">${KRW(t.krw)}</b><i>${t.units.toLocaleString()} EA</i></div>`;
+ const byStg={}; STGS.forEach(function(s){ byStg[s]={krw:0,n:0,plt:0}; });
+ PLANS.forEach(function(p){ let l=[]; PLST.forEach(function(st){ l=l.concat(plList(p.code,st)); });
+  const s=plSum(l), k=STG[p.status]?p.status:"제안";
+  byStg[k].krw+=s.krw; byStg[k].n+=s.n; byStg[k].plt+=Math.round(s.plt*100)/100; });
+ const stgCard=function(s,cls){ const b=byStg[s], c=STG[s];
+  return '<div class="kpi '+cls+'"><span>'+c[0]+'</span><b style="font-size:16px">'+KRW(b.krw)+'</b><i>'+b.n+'건 · '+(Math.round(b.plt*100)/100)+' PLT</i></div>'; };
+ $("#plKpi").innerHTML=`<div class="kpi"><span>회차</span><b>${PLANS.length}</b><i>제안 ${byStg["제안"].n?PLANS.filter(function(p){return (p.status||"제안")==="제안"}).length:0} · 협의 ${PLANS.filter(function(p){return p.status==="협의"}).length} · 확정 ${PLANS.filter(function(p){return p.status==="확정"}).length}</i></div><div class="kpi blu"><span>배정 품목</span><b>${t.n}</b><i>전체 ${D.items.length}개 중 · ${t.plt} PLT</i></div>${stgCard("제안","")}${stgCard("협의","")}${stgCard("확정","grn")}<div class="kpi"><span>합계</span><b style="font-size:16px">${KRW(t.krw)}</b><i>${t.units.toLocaleString()} EA · CBM ${t.cbm}</i></div>`;
  plBind(); plDetail();
 }
 function plDetail(){
