@@ -2166,17 +2166,17 @@ function plStorage(x){ const s=(x&&x.st)||""; if(s.indexOf("냉장")>=0) return 
 function plKey(code,st){ return code+"|"+st; }
 function plList(code,st){ return (PLQ[plKey(code,st)]=PLQ[plKey(code,st)]||[]); }
 function plFind(no){ for(const k of Object.keys(PLQ)){ const i=PLQ[k].findIndex(r=>r.no===no); if(i>=0) return {k:k,i:i,row:PLQ[k][i]}; } return null; }
-function plAmount(r){ const x=plItem(r.no); if(!x) return 0; if(r.amt!=null) return r.amt; const units=(r.plt||0)*(r.upl||0); return (x.pkrw||0)*units; }
+function plAmount(r){ const x=plItem(r.no); if(!x) return 0; if(r.amt!=null) return r.amt; return (x.pkrw||0)*(r.ea||0); }
 function plSum(list){ let krw=0,plt=0,cbm=0,units=0;
- list.forEach(function(r){ const x=plItem(r.no); if(!x)return; krw+=plAmount(r); plt+=(r.plt||0); units+=(r.plt||0)*(r.upl||0); if(x.cbm) cbm+=x.cbm*(r.plt||0); });
+ list.forEach(function(r){ const x=plItem(r.no); if(!x)return; krw+=plAmount(r); plt+=(r.plt||0); units+=(r.ea||0); if(x.cbm) cbm+=x.cbm*(r.plt||0); });
  return {krw:krw, plt:Math.round(plt*100)/100, cbm:Math.round(cbm*1000)/1000, units:units, n:list.length}; }
-function plCard(r,locked){
+function plCard(r,locked,editable){
  const no=r.no, x=plItem(no); if(!x) return "";
  const img=x.im?`<img src="${x.im}" style="width:32px;height:32px;object-fit:cover;border-radius:6px;flex:none">`:`<div style="width:32px;height:32px;border-radius:6px;background:#F3F4F6;flex:none"></div>`;
  const amt=plAmount(r);
- const line2 = r.plt!=null ? `${r.plt} PLT · ${((r.plt||0)*(r.upl||0)).toLocaleString()} EA` : `${E(BNM(x)||"")} · ${E(x.sub||"")}`;
- const right = amt ? KRW(amt) : (x.pkrw?KRW(x.pkrw)+"<span style='color:#9CA3AF'>/EA</span>":'<span style="color:#D97706">단가없음</span>');
- return `<div class="plcard" ${locked?"":'draggable="true"'} data-no="${no}" style="display:flex;gap:8px;align-items:center;background:#fff;border:1px solid ${PLSEL===no?"#B45309":"#E5E7EB"};border-radius:8px;padding:7px;margin-bottom:6px;cursor:${locked?"pointer":"grab"}">${img}<div style="min-width:0;flex:1"><div style="font-size:12px;font-weight:600;color:#111827;line-height:1.35;word-break:keep-all">${String(no).padStart(2,"0")} · ${E(x.ko)}</div><div style="font-size:11px;color:#6B7280;margin-top:2px">${line2}</div></div><div style="font-size:11px;color:#374151;text-align:right;flex:none">${right}</div></div>`;
+ const inp=function(f,v,w,ph){ return `<input class="plq" data-no="${no}" data-f="${f}" value="${v==null?"":v}" placeholder="${ph}" draggable="false" ${editable?"":"readonly"} style="width:${w}px;padding:3px 5px;font-size:11px;text-align:right;border:1px solid ${editable?"#E5E7EB":"transparent"};border-radius:5px;background:${editable?"#fff":"transparent"};color:#374151">`; };
+ const body = editable ? `<div style="display:flex;gap:4px;align-items:center;margin-top:5px;font-size:10px;color:#9CA3AF">${inp("plt",r.plt,42,"PLT")}<span>PLT</span>${inp("ea",r.ea,58,"EA")}<span>EA</span>${inp("amt",r.amt==null?(amt||""):r.amt,84,"금액")}<span>원</span></div>` : `<div style="font-size:11px;color:#6B7280;margin-top:2px">${r.plt!=null?`${r.plt} PLT · ${(r.ea||0).toLocaleString()} EA · ${KRW(amt)}`:`${E(BNM(x)||"")} · ${E(x.sub||"")}`}</div>`;
+ return `<div class="plcard" ${locked?"":'draggable="true"'} data-no="${no}" style="background:#fff;border:1px solid ${PLSEL===no?"#B45309":"#E5E7EB"};border-radius:8px;padding:7px;margin-bottom:6px;cursor:${locked?"pointer":"grab"}"><div style="display:flex;gap:8px;align-items:center">${img}<div style="min-width:0;flex:1"><div style="font-size:12px;font-weight:600;color:#111827;line-height:1.35;word-break:keep-all">${String(no).padStart(2,"0")} · ${E(x.ko)}</div><div style="font-size:10.5px;color:#9CA3AF;margin-top:1px">${E(BNM(x)||"")} · ${x.pkrw?KRW(x.pkrw)+"/EA":"단가없음"}</div></div></div>${body}</div>`;
 }
 function plPool(){
  const used=new Set(); Object.keys(PLQ).forEach(k=>PLQ[k].forEach(r=>used.add(r.no)));
@@ -2187,7 +2187,7 @@ function plZone(code,st,rows,locked){
  const s=plSum(rows);
  const tone = st==="냉동" ? "#EFF6FF" : (st==="냉장" ? "#F0FDFA" : "#FFFBEB");
  const ico  = st==="냉동" ? "❄️" : (st==="냉장" ? "🧊" : "☀️");
- return `<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:11px;color:#6B7280;background:${tone};padding:4px 8px;border-radius:6px;margin-bottom:5px"><b style="color:#374151">${ico} ${st}</b><span>${s.n}건 · ${s.plt} PLT · ${KRW(s.krw)}</span></div><div class="pldrop" data-code="${code}" data-st="${st}" style="min-height:44px">${rows.map(function(r){return plCard(r,locked)}).join("")}</div></div>`;
+ return `<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:11px;color:#6B7280;background:${tone};padding:4px 8px;border-radius:6px;margin-bottom:5px"><b style="color:#374151">${ico} ${st}</b><span>${s.n}건 · ${s.plt} PLT · ${KRW(s.krw)}</span></div><div class="pldrop" data-code="${code}" data-st="${st}" style="min-height:44px">${rows.map(function(r){return plCard(r,locked,code!==PLPOOL&&!locked&&isMaster())}).join("")}</div></div>`;
 }
 function plCol(p){
  const locked = p && p.status==="확정";
@@ -2197,7 +2197,7 @@ function plCol(p){
  const all=rows["냉동"].concat(rows["상온"]);
  const s=plSum(all);
  const head = p
-  ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b style="font-size:13px;color:#111827">${E(p.label)}</b><span style="font-size:11px;padding:2px 8px;border-radius:99px;background:${STG[p.status||"제안"][1]};color:${STG[p.status||"제안"][2]}">${STG[p.status||"제안"][0]}</span></div>${stepper(p)}<div style="font-size:11px;color:#9CA3AF;margin-bottom:6px">${E(p.note||"")}</div><div style="font-size:12px;color:#111827;font-weight:600;margin-bottom:2px">${KRW(s.krw)}</div><div style="font-size:11px;color:#6B7280;margin-bottom:8px">${s.n}건 · ${s.plt} PLT · ${s.units.toLocaleString()} EA · CBM ${s.cbm}</div>`
+  ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b style="font-size:13px;color:#111827">${E(p.label)}</b><span style="font-size:11px;padding:2px 8px;border-radius:99px;background:${STG[p.status||"제안"][1]};color:${STG[p.status||"제안"][2]}">${STG[p.status||"제안"][0]}</span></div>${stepper(p)}<div style="display:grid;grid-template-columns:auto 1fr auto 1fr;gap:4px 6px;align-items:center;font-size:10.5px;color:#9CA3AF;margin-bottom:8px"><span>ETD</span><input class="plmeta" data-code="${code}" data-f="etd" type="date" value="${p.etd||''}" ${isMaster()?"":"readonly"} style="width:100%;padding:3px 4px;font-size:11px;border:1px solid #E5E7EB;border-radius:5px"><span>ETA</span><input class="plmeta" data-code="${code}" data-f="eta" type="date" value="${p.eta||''}" ${isMaster()?"":"readonly"} style="width:100%;padding:3px 4px;font-size:11px;border:1px solid #E5E7EB;border-radius:5px"><span>컨테이너</span><input class="plmeta" data-code="${code}" data-f="container" value="${E(p.container||'')}" placeholder="40HQ x 1" ${isMaster()?"":"readonly"} style="width:100%;padding:3px 4px;font-size:11px;border:1px solid #E5E7EB;border-radius:5px"><span>POD</span><input class="plmeta" data-code="${code}" data-f="pod" value="${E(p.pod||'')}" placeholder="SYDNEY, AU" ${isMaster()?"":"readonly"} style="width:100%;padding:3px 4px;font-size:11px;border:1px solid #E5E7EB;border-radius:5px"></div><div style="font-size:11px;color:#9CA3AF;margin-bottom:6px">${E(p.note||"")}</div><div style="font-size:12px;color:#111827;font-weight:600;margin-bottom:2px">${KRW(s.krw)}</div><div style="font-size:11px;color:#6B7280;margin-bottom:8px">${s.n}건 · ${s.plt} PLT · ${s.units.toLocaleString()} EA · CBM ${s.cbm}</div>`
   : `<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px"><b style="font-size:13px;color:#111827">대기 목록</b><span style="font-size:12px;color:#6B7280">${s.n}건</span></div><div style="font-size:11px;color:#9CA3AF;margin-bottom:8px">아직 어느 회차에도 없는 제품</div>`;
  return `<div class="plcol" style="flex:none;width:360px;background:${p?"#fff":"#F9FAFB"};border:1px solid ${locked?"#BBF7D0":"#E5E7EB"};border-radius:10px;padding:10px">${head}${PLST.map(function(st){return plZone(code,st,rows[st],locked)}).join("")}</div>`;
 }
@@ -2224,7 +2224,7 @@ function plDetail(){
  const f=plFind(PLSEL);
  const rowsHtml=[["브랜드",BNM(x)||"-"],["영문명",x.en||"-"],["카테고리",(x.cat||"-")],["내용량",x.wt||"-"],["보관",x.st||"-"],["유통기한",x.shelf||"-"],["원산지",x.org||"-"],["바코드",x.ean||"-"],["SKU",x.sku||"-"],["HS CODE",x.hs||"-"],["박스입수",x.upc||"-"],["카톤규격",x.cdim||"-"],["박스중량",x.ckg?x.ckg+" kg":"-"],["CBM/CTN",x.cbm||"-"],["단가",x.pkrw?KRW(x.pkrw):"-"],["인코텀즈",x.inco||"-"]].map(function(r){return `<div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #F3F4F6"><span style="width:78px;flex:none;color:#9CA3AF;font-size:11px">${r[0]}</span><span style="font-size:12px;color:#374151">${E(String(r[1]))}</span></div>`}).join("");
  const plan=f?f.k.split("|")[0]:null;
- const qty=(f&&f.row.plt!=null)?`<div style="font-size:12px;color:#B45309;margin-bottom:6px">${E(plan)} · ${f.row.plt} PLT · ${((f.row.plt||0)*(f.row.upl||0)).toLocaleString()} EA · ${KRW(plAmount(f.row))}</div>`:"";
+ const qty=(f&&f.row.plt!=null)?`<div style="font-size:12px;color:#B45309;margin-bottom:6px">${E(plan)} · ${f.row.plt} PLT · ${(f.row.ea||0).toLocaleString()} EA · ${KRW(plAmount(f.row))}</div>`:"";
  box.innerHTML=`<div style="display:flex;gap:10px;margin-bottom:8px">${x.im?`<img src="${x.im}" style="width:74px;height:74px;object-fit:cover;border-radius:8px">`:""}<div style="min-width:0"><b style="font-size:13px">${String(x.no).padStart(2,"0")} · ${E(x.ko)}</b><div style="font-size:11px;color:#6B7280">${E(x.sub||"")}</div></div></div>${qty}${rowsHtml}${(x.usp&&x.usp.length)?`<div style="margin-top:8px">${x.usp.map(function(u){return `<div style="font-size:11px;color:#6B7280">· ${E(u)}</div>`}).join("")}</div>`:""}`;
 }
 function plBind(){
@@ -2252,6 +2252,30 @@ function plBind(){
    drag=null; drawPlan();
   };
  });
+ document.querySelectorAll("input.plq").forEach(function(el){
+  el.onmousedown=function(e){ e.stopPropagation(); };
+  el.onclick=function(e){ e.stopPropagation(); };
+  el.onchange=function(){
+   const no=+el.dataset.no, f=el.dataset.f, fd=plFind(no); if(!fd) return;
+   const raw=(el.value||"").replace(/[^0-9.]/g,"");
+   const v=raw===""?null:parseFloat(raw);
+   fd.row[f]=v;
+   if(f!=="amt"){ const x=plItem(no);
+    if(f==="plt"&&v!=null&&fd.row.ea==null&&x&&x.upc) fd.row.ea=Math.round(v*x.upc);
+    if(x&&x.pkrw&&fd.row.ea!=null) fd.row.amt=Math.round(x.pkrw*fd.row.ea); }
+   PLDIRTY=true; msg("#plMsg","변경됨 — 저장을 눌러주세요."); drawPlan();
+  };
+ });
+ document.querySelectorAll("input.plmeta").forEach(function(el){
+  el.onchange=async function(){
+   if(!isMaster()) return;
+   const code=el.dataset.code, f=el.dataset.f, p=PLANS.find(function(q){return q.code===code});
+   if(!p) return; p[f]=el.value||null;
+   const pl={code:code}; pl[f]=el.value||"";
+   try{ await api({action:"plan_upsert",plan:pl}); msg("#plMsg",code+" 선적정보 저장"); }
+   catch(e){ msg("#plMsg","저장 실패 — "+e.message,1); }
+  };
+ });
  document.querySelectorAll("button[data-stg]").forEach(function(b){
   b.onclick=async function(){
    const parts=b.dataset.stg.split("|"), code=parts[0], next=parts[1];
@@ -2272,12 +2296,12 @@ async function loadPlans(){
   (r.items||[]).forEach(function(i){
    const x=plItem(i.row_no); if(!x) return;
    const k=plKey(i.plan_code,plStorage(x)); if(!PLQ[k]) PLQ[k]=[];
-   PLQ[k].push({no:i.row_no, plt:i.qty_plt!=null?+i.qty_plt:null, upl:(i.qty_units!=null&&i.qty_plt)?Math.round(i.qty_units/i.qty_plt):null, amt:i.amount_krw!=null?+i.amount_krw:null});
+   PLQ[k].push({no:i.row_no, plt:i.qty_plt!=null?+i.qty_plt:null, ea:i.qty_units!=null?+i.qty_units:null, amt:i.amount_krw!=null?+i.amount_krw:null});
   });
   PLDIRTY=false; drawPlan();
  }catch(e){ msg("#plMsg","불러오기 실패 — "+e.message,1); }
 }
-if($("#plSave")) $("#plSave").onclick=async function(){ if(!isMaster()){ msg("#plMsg","마스터만 저장할 수 있습니다.",1); return; } try{ for(const p of PLANS){ if(p.status==="확정") continue; let rows=[]; PLST.forEach(function(st){ plList(p.code,st).forEach(function(r){ rows.push({row_no:r.no,pos:rows.length,qty_plt:r.plt,qty_units:(r.plt!=null&&r.upl!=null)?Math.round(r.plt*r.upl):null,amount_krw:r.amt}); }); }); await api({action:"plan_save",code:p.code,rows:rows}); } PLDIRTY=false; msg("#plMsg","저장했습니다."); }catch(e){ msg("#plMsg","저장 실패 — "+e.message,1); } };
+if($("#plSave")) $("#plSave").onclick=async function(){ if(!isMaster()){ msg("#plMsg","마스터만 저장할 수 있습니다.",1); return; } try{ for(const p of PLANS){ if(p.status==="확정") continue; let rows=[]; PLST.forEach(function(st){ plList(p.code,st).forEach(function(r){ rows.push({row_no:r.no,pos:rows.length,qty_plt:r.plt,qty_units:r.ea,amount_krw:r.amt}); }); }); await api({action:"plan_save",code:p.code,rows:rows}); } PLDIRTY=false; msg("#plMsg","저장했습니다."); }catch(e){ msg("#plMsg","저장 실패 — "+e.message,1); } };
 if($("#plReload")) $("#plReload").onclick=function(){loadPlans()};
 if($("#plSearch")) $("#plSearch").oninput=function(){drawPlan()};
 if($("#plCat")) $("#plCat").onchange=function(){drawPlan()};
