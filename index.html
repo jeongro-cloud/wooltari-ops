@@ -596,6 +596,7 @@ body.pub #topOut, body.pub #sideOut{display:none!important}
      <div style="display:flex;gap:8px;margin-top:10px">
       <button id="npSave" class="gbtn" style="width:auto;padding:7px 18px">만들기</button>
       <button id="npCancel" class="gbtn" style="width:auto;padding:7px 18px;background:#fff;color:#6B7280;border:1px solid #E5E7EB">취소</button>
+      <span id="npErr" style="font-size:12px;color:#DC2626;align-self:center"></span>
      </div></div>
     <div style="display:flex;gap:12px;align-items:flex-start">
      <div id="plBoard" style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;align-items:flex-start;flex:1;min-width:0"></div>
@@ -2470,12 +2471,23 @@ async function loadPlans(){
 if($("#plSave")) $("#plSave").onclick=async function(){ if(!isMaster()){ msg("#plMsg","마스터만 저장할 수 있습니다.",1); return; } try{ for(const p of PLANS){ if(p.status==="확정") continue; let rows=[]; PLST.forEach(function(st){ plList(p.code,st).forEach(function(r){ rows.push({row_no:r.no,pos:rows.length,qty_plt:r.plt,qty_units:r.ea,unit_krw:r.unit,amount_krw:r.amt}); }); }); await api({action:"plan_save",code:p.code,rows:rows}); } PLDIRTY=false; msg("#plMsg","저장했습니다."); }catch(e){ msg("#plMsg","저장 실패 — "+e.message,1); } };
 if($("#plNew")) $("#plNew").onclick=function(){ const b=$("#plNewBox"); if(!b) return;
  if(!isMaster()){ msg("#plMsg","마스터만 회차를 만들 수 있습니다.",1); return; }
- b.style.display = b.style.display==="none" ? "" : "none"; };
+ const show = b.style.display==="none";
+ b.style.display = show ? "" : "none";
+ if(show){ const c=$("#npCode");
+  if(c&&!c.value){ const d=new Date(); const mm=String(d.getMonth()+1).padStart(2,"0"), dd=String(d.getDate()).padStart(2,"0");
+   let base="PI-WTR"+mm+dd, code=base, k=2;
+   while(PLANS.some(function(p){return p.code===code})){ code=base+"-"+k; k++; }
+   c.value=code; }
+  const e2=$("#npErr"); if(e2) e2.textContent="";
+  if(c) setTimeout(function(){ c.focus(); c.select(); },60);
+ } };
 if($("#npCancel")) $("#npCancel").onclick=function(){ $("#plNewBox").style.display="none"; };
 if($("#npSave")) $("#npSave").onclick=async function(){
  const code=($("#npCode").value||"").trim();
- if(!code){ msg("#plMsg","회차 코드를 입력하세요.",1); return; }
- if(PLANS.some(function(p){return p.code===code})){ msg("#plMsg","이미 있는 회차 코드입니다.",1); return; }
+ const ez=$("#npErr");
+ if(!code){ if(ez) ez.textContent="회차 코드를 입력하세요."; msg("#plMsg","회차 코드를 입력하세요.",1); $("#npCode").focus(); return; }
+ if(PLANS.some(function(p){return p.code===code})){ if(ez) ez.textContent="이미 있는 회차 코드입니다."; msg("#plMsg","이미 있는 회차 코드입니다.",1); return; }
+ if(ez) ez.textContent="";
  const plan={code:code, label:($("#npLabel").value||"").trim()||code,
   etd:$("#npEtd").value||"", eta:$("#npEta").value||"",
   container:($("#npCon").value||"").trim(), pod:($("#npPod").value||"").trim(),
@@ -2483,7 +2495,7 @@ if($("#npSave")) $("#npSave").onclick=async function(){
  try{ await api({action:"plan_upsert",plan:plan});
   ["npCode","npLabel","npEtd","npEta","npCon","npPod","npNote"].forEach(function(id){ const el=$("#"+id); if(el) el.value=""; });
   $("#plNewBox").style.display="none"; msg("#plMsg",code+" 회차를 만들었습니다."); await loadPlans();
- }catch(e){ msg("#plMsg","생성 실패 — "+e.message,1); }
+ }catch(e){ if(ez) ez.textContent="생성 실패 — "+e.message; msg("#plMsg","생성 실패 — "+e.message,1); }
 };
 if($("#plReload")) $("#plReload").onclick=function(){loadPlans()};
 if($("#plSearch")) $("#plSearch").oninput=function(){drawPlan()};
