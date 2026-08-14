@@ -2246,7 +2246,7 @@ function plCol(p){
  const all=rows["냉동"].concat(rows["상온"]);
  const s=plSum(all);
  const head = p
-  ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b style="font-size:13px;color:#111827">${E(p.label)}</b><span style="font-size:11px;padding:2px 8px;border-radius:99px;background:${STG[p.status||"제안"][1]};color:${STG[p.status||"제안"][2]}">${STG[p.status||"제안"][0]}</span></div>${stepper(p)}<div style="font-size:11px;color:#9CA3AF;margin-bottom:6px">${E(p.note||"")}</div><div style="font-size:12px;color:#111827;font-weight:600;margin-bottom:2px">${KRW(s.krw)}</div><div style="font-size:11px;color:#6B7280;margin-bottom:8px">${s.n}건 · ${s.plt} PLT · ${s.units.toLocaleString()} EA · CBM ${s.cbm}</div>`
+  ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b style="font-size:13px;color:#111827">${E(p.label)}</b><span style="font-size:11px;padding:2px 8px;border-radius:99px;background:${STG[p.status||"제안"][1]};color:${STG[p.status||"제안"][2]}">${STG[p.status||"제안"][0]}</span></div>${stepper(p)}<div style="display:grid;grid-template-columns:auto 1fr auto 1fr;gap:5px 7px;align-items:center;font-size:10.5px;color:#9CA3AF;margin:2px 0 9px"><span>ETD</span><input class="plmeta" data-code="${p.code}" data-f="etd" type="date" value="${p.etd||''}" ${isMaster()?"":"readonly"} style="width:100%;padding:3px 4px;font-size:11px;border:1px solid #E5E7EB;border-radius:5px"><span>ETA</span><input class="plmeta" data-code="${p.code}" data-f="eta" type="date" value="${p.eta||''}" ${isMaster()?"":"readonly"} style="width:100%;padding:3px 4px;font-size:11px;border:1px solid #E5E7EB;border-radius:5px"><span>컨테이너</span><input class="plmeta" data-code="${p.code}" data-f="container" value="${E(p.container||'')}" placeholder="40HQ x 1" ${isMaster()?"":"readonly"} style="width:100%;padding:3px 4px;font-size:11px;border:1px solid #E5E7EB;border-radius:5px"><span>POD</span><input class="plmeta" data-code="${p.code}" data-f="pod" value="${E(p.pod||'')}" placeholder="SYDNEY, AU" ${isMaster()?"":"readonly"} style="width:100%;padding:3px 4px;font-size:11px;border:1px solid #E5E7EB;border-radius:5px"></div><div style="font-size:11px;color:#9CA3AF;margin-bottom:6px">${E(p.note||"")}</div><div style="font-size:12px;color:#111827;font-weight:600;margin-bottom:2px">${KRW(s.krw)}</div><div style="font-size:11px;color:#6B7280;margin-bottom:8px">${s.n}건 · ${s.plt} PLT · ${s.units.toLocaleString()} EA · CBM ${s.cbm}</div>`
   : `<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px"><b style="font-size:13px;color:#111827">대기 목록</b><span style="font-size:12px;color:#6B7280">${s.n}건</span></div><div style="font-size:11px;color:#9CA3AF;margin-bottom:8px">아직 어느 회차에도 없는 제품</div>`;
  return `<div class="plcol" style="flex:none;width:360px;background:${p?"#fff":"#F9FAFB"};border:1px solid ${locked?"#BBF7D0":"#E5E7EB"};border-radius:10px;padding:10px">${head}${PLST.map(function(st){return plZone(code,st,rows[st],locked)}).join("")}</div>`;
 }
@@ -2331,6 +2331,19 @@ function plBind(){
    if(code!==PLPOOL) plList(code,st).push(row);
    PLDIRTY=true; msg("#plMsg","변경됨 — 저장을 눌러주세요.");
    drag=null; drawPlan();
+  };
+ });
+ document.querySelectorAll("input.plmeta").forEach(function(el){
+  el.onmousedown=function(e){ e.stopPropagation(); };
+  el.onclick=function(e){ e.stopPropagation(); };
+  el.onchange=async function(){
+   if(!isMaster()) return;
+   const code=el.dataset.code, f=el.dataset.f;
+   const p=PLANS.find(function(q){return q.code===code}); if(!p) return;
+   p[f]=el.value||null;
+   const pl={code:code}; pl[f]=el.value||"";
+   try{ await api({action:"plan_upsert",plan:pl}); msg("#plMsg",code+" 선적정보를 저장했습니다."); }
+   catch(e){ msg("#plMsg","저장 실패 — "+e.message,1); }
   };
  });
  document.querySelectorAll("button[data-stg]").forEach(function(b){
