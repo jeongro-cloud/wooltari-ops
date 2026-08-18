@@ -967,6 +967,7 @@ function fromDB(p,base){
   story:p.brand_story||"", full:p.desc_full||"", vari:p.variants||"", cook:p.cooking||"",
   nutri:p.nutrition||"", certs:p.certs||[], claims:p.label_claims||"", extra:p.extra_note||"", links:p.links||"",
   pack:p.packaging||"", serv:p.serving_size||"", servn:p.servings_per||"", tihi:p.ti_hi||"", inote:p.internal_note||"",
+  purl:p.product_url||"",
   usp:(p.selling_points&&p.selling_points.length)?p.selling_points:(b.usp||[]),
   den:p.desc_en||b.den||"", dko:p.desc_ko||b.dko||"",
   docs:p.docs||b.docs||"", note:p.mmpa_note||b.note||"",
@@ -1714,8 +1715,8 @@ function open_(no){
  $("#dKo").textContent=x.ko; $("#dEn").textContent=x.en;
  const R=(a,b)=>`<tr><td>${a}</td><td class="${b?"":"tbc"}">${E(b||"TBC")}</td></tr>`;
  $("#dBd").innerHTML=`
-  <div class="shots"><div>${x.im?`<img src="${x.im}">`:'<span class="tbc mono" style="font-size:10px">NO IMAGE</span>'}</div>
-   ${x.im2?`<div><img src="${x.im2}"></div>`:""}</div>
+  <div class="shots" style="gap:10px"><div style="min-height:300px;display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid #E5E7EB;border-radius:10px;overflow:hidden">${x.im?`<img src="${x.im}" style="max-width:100%;max-height:300px;object-fit:contain;cursor:zoom-in" onclick="window.open(this.src,'_blank')">`:'<span class="tbc mono" style="font-size:11px">NO IMAGE</span>'}</div>
+   ${x.im2?`<div style="min-height:300px;display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid #E5E7EB;border-radius:10px;overflow:hidden"><img src="${x.im2}" style="max-width:100%;max-height:300px;object-fit:contain;cursor:zoom-in" onclick="window.open(this.src,'_blank')"></div>`:""}</div>
   ${x.hi?`<div class="alert"><b>선적 전 확인 필요.</b> ${E(x.note)}</div>`:""}
   <div class="sec"><h5>규격</h5><table class="sp">
    ${R("카테고리",x.cat)}${R("중분류",x.sub)}${x.status?R("상태",x.status):""}
@@ -1738,9 +1739,16 @@ function open_(no){
    ?`<p class="txt"><span class="nego">상세정보 협의</span><br><span style="color:#6B7280">
      단가 · 최소주문수량(MOQ) · 결제조건 · 납기는 물량과 거래조건에 따라 달라집니다. 담당자에게 문의해 주세요.</span></p>`
    :`<p class="txt" style="color:#9CA3AF">금액 열람 권한이 없습니다. 마스터에게 권한을 요청하세요.</p>`)}</div>`:""}
-  ${x.usp.length?`<div class="sec"><h5>셀링 포인트</h5><ul class="u">${x.usp.map(u=>`<li>${E(u)}</li>`).join("")}</ul></div>`:""}
-  <div class="sec"><h5>제품 설명</h5><p class="txt">${E(x.den)}</p>
-   <p class="txt" style="margin-top:9px;color:#6B7280">${E(x.dko)}</p></div>
+  ${x.usp&&x.usp.length?`<div class="sec"><h5>셀링 포인트</h5><ul class="u">${x.usp.map(u=>`<li>${E(u)}</li>`).join("")}</ul></div>`:""}
+  ${x.full?`<div class="sec"><h5>제품 설명</h5><p class="txt" style="white-space:pre-wrap;line-height:1.7">${E(x.full)}</p></div>`:((x.den||x.dko)?`<div class="sec"><h5>제품 설명</h5><p class="txt">${E(x.den)}</p><p class="txt" style="margin-top:9px;color:#6B7280">${E(x.dko)}</p></div>`:"")}
+  ${x.vari?`<div class="sec"><h5>구성 · 용량</h5><p class="txt" style="white-space:pre-wrap">${E(x.vari)}</p></div>`:""}
+  ${x.cook?`<div class="sec"><h5>조리방법</h5><p class="txt" style="white-space:pre-wrap;line-height:1.7">${E(x.cook)}</p></div>`:""}
+  ${x.nutri?`<div class="sec"><h5>영양성분</h5><p class="txt mono" style="white-space:pre-wrap;line-height:1.7">${E(x.nutri)}</p></div>`:""}
+  ${(x.certs&&x.certs.length)?`<div class="sec"><h5>인증</h5><div style="display:flex;flex-wrap:wrap;gap:6px">${x.certs.map(c=>`<span style="font-size:12px;padding:4px 11px;border-radius:99px;background:#ECFDF5;color:#15803D;border:1px solid #BBF7D0">${E(c)}</span>`).join("")}</div></div>`:""}
+  ${x.claims?`<div class="sec"><h5>라벨 문구</h5><p class="txt" style="white-space:pre-wrap">${E(x.claims)}</p></div>`:""}
+  ${x.story?`<div class="sec"><h5>브랜드</h5><p class="txt" style="white-space:pre-wrap;line-height:1.7">${E(x.story)}</p></div>`:""}
+  ${x.extra?`<div class="sec"><h5>추가 정보</h5><p class="txt" style="white-space:pre-wrap;line-height:1.7">${E(x.extra)}</p></div>`:""}
+  ${x.purl?`<div class="sec"><h5>울타리몰 상세페이지</h5><a href="${E(x.purl)}" target="_blank" rel="noopener" style="display:inline-block;padding:9px 16px;border-radius:9px;background:#B45309;color:#fff;font-size:13px;font-weight:600;text-decoration:none">🔗 울타리몰에서 상세보기</a><p class="txt" style="margin-top:7px;color:#9CA3AF;font-size:11.5px">동일 제품의 판매 페이지입니다. 상세 이미지·성분·리뷰를 확인할 수 있습니다.</p></div>`:""}
   ${(x.c1==="SEA"||x.c1==="KIT")?`<div class="sec"><h5>MMPA</h5><p class="txt">${E(SC[x.scope][0])} — ${E(x.note)}</p></div>`:""}
   <div class="sec"><h5>필요 서류</h5><p class="txt">${E(x.docs)}</p></div>
   ${x.rem?`<div class="sec"><h5>비고</h5><p class="txt">${E(x.rem)}</p></div>`:""}
