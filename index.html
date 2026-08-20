@@ -629,6 +629,7 @@ body.pub #topOut, body.pub #sideOut{display:none!important}
    <p class="hint">납품구성에서 <b>납품확정</b>된 회차가 보관구획별 컨테이너로 표시됩니다. 행을 누르면 공급사별 내역이 펼쳐집니다.</p>
    <div class="bd">
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+     <select id="shS" style="padding:7px 10px;border:1px solid #E5E7EB;border-radius:8px;font-size:13px"><option value="">전체 단계</option><option value="확정">납품확정만</option><option value="협의">제품협의</option><option value="제안">제품제안</option></select>
      <select id="shY" style="padding:7px 10px;border:1px solid #E5E7EB;border-radius:8px;font-size:13px"></select>
      <select id="shM" style="padding:7px 10px;border:1px solid #E5E7EB;border-radius:8px;font-size:13px"></select>
      <button id="shOpen" class="gbtn" style="width:auto;padding:7px 14px;background:#fff;color:#6B7280;border:1px solid #E5E7EB">모두 펼치기</button>
@@ -2337,7 +2338,7 @@ function drawPlan(){
  const stgCard=function(s,cls){ const b=byStg[s], c=STG[s];
   return '<div class="kpi '+cls+'"><span>'+c[0]+'</span><b style="font-size:16px">'+KRW(b.krw)+'</b><i>'+b.n+'건 · '+(Math.round(b.plt*100)/100)+' PLT</i></div>'; };
  $("#plKpi").innerHTML=`<div class="kpi"><span>회차</span><b>${PLANS.length}</b><i>제안 ${byStg["제안"].n?PLANS.filter(function(p){return (p.status||"제안")==="제안"}).length:0} · 협의 ${PLANS.filter(function(p){return p.status==="협의"}).length} · 확정 ${PLANS.filter(function(p){return p.status==="확정"}).length}</i></div><div class="kpi blu"><span>배정 품목</span><b>${t.n}</b><i>${t.plt} PLT · ${t.kg.toLocaleString()} kg · CBM ${t.cbm}</i></div>${stgCard("제안","")}${stgCard("협의","")}${stgCard("확정","grn")}<div class="kpi"><span>협의금액</span><b style="font-size:16px">${KRW(byStg["제안"].krw+byStg["협의"].krw)}</b><i>${byStg["제안"].n+byStg["협의"].n}건 · 확정 전 진행분</i></div>`;
- plBind(); plDetail();
+ plBind(); plDetail(); try{drawShip()}catch(e){}
  try{
   const z=$("#plDrop"), fi=$("#plFile");
   if(z&&fi){
@@ -2486,7 +2487,7 @@ function plBind(){
    const k=plKey(code,st); LEGS[k]=LEGS[k]||{plan_code:code,storage:st};
    LEGS[k][f]=el.value||null;
    const leg={plan_code:code,storage:st}; leg[f]=el.value||"";
-   try{ await api({action:"plan_leg",leg:leg}); msg("#plMsg",code+" · "+st+" 선적정보를 저장했습니다."); }
+   try{ await api({action:"plan_leg",leg:leg}); msg("#plMsg",code+" · "+st+" 선적정보를 저장했습니다."); try{drawShip()}catch(e3){} }
    catch(e){ msg("#plMsg","저장 실패 — "+e.message,1); }
   };
  });
@@ -2530,14 +2531,15 @@ async function loadPlans(){
   PLDIRTY=false; drawPlan(); try{drawShip()}catch(e){}
  }catch(e){ msg("#plMsg","불러오기 실패 — "+e.message,1); }
 }
-if($("#plSave")) $("#plSave").onclick=async function(){ if(!isMaster()){ msg("#plMsg","마스터만 저장할 수 있습니다.",1); return; } try{ for(const p of PLANS){ if(p.status==="확정") continue; let rows=[]; PLST.forEach(function(st){ plList(p.code,st).forEach(function(r){ rows.push({row_no:r.no,pos:rows.length,qty_plt:r.plt,qty_units:r.ea,unit_krw:r.unit,amount_krw:r.amt}); }); }); await api({action:"plan_save",code:p.code,rows:rows}); } PLDIRTY=false; msg("#plMsg","저장했습니다."); }catch(e){ msg("#plMsg","저장 실패 — "+e.message,1); } };
+if($("#plSave")) $("#plSave").onclick=async function(){ if(!isMaster()){ msg("#plMsg","마스터만 저장할 수 있습니다.",1); return; } try{ for(const p of PLANS){ if(p.status==="확정") continue; let rows=[]; PLST.forEach(function(st){ plList(p.code,st).forEach(function(r){ rows.push({row_no:r.no,pos:rows.length,qty_plt:r.plt,qty_units:r.ea,unit_krw:r.unit,amount_krw:r.amt}); }); }); await api({action:"plan_save",code:p.code,rows:rows}); } PLDIRTY=false; msg("#plMsg","저장했습니다. 선적확정에 반영되었습니다."); try{drawShip()}catch(e){} }catch(e){ msg("#plMsg","저장 실패 — "+e.message,1); } };
 /* ===== 선적확정 ===== */
 function drawShip(){
  const tb=$("#shTbl"); if(!tb) return;
  const q=(($("#shQ")&&$("#shQ").value)||"").trim().toLowerCase();
  const WK={"냉동":["냉동","#EFF6FF","#1D4ED8"],"냉장":["냉장","#F0FDFA","#0F766E"],"상온":["상온","#FFFBEB","#B45309"]};
  let all=[];
- PLANS.filter(function(p){return p.status==="확정"}).forEach(function(p){
+ const fs=($("#shS")&&$("#shS").value)||"";
+ PLANS.filter(function(p){return !fs||(p.status||"제안")===fs}).forEach(function(p){
   PLST.forEach(function(st){
    const list=plList(p.code,st); if(!list.length) return;
    all.push({p:p,st:st,leg:plLeg(p.code,st),list:list,s:plSum(list)});
@@ -2561,9 +2563,9 @@ function drawShip(){
   if($("#shKpi")) $("#shKpi").innerHTML='<div class="kpi"><span>컨테이너</span><b>0</b><i>확정 선적</i></div>';
   return;
  }
- const TH=["No.","Work","Forwarder","Container No.","Vessel, Voyage","BKG No.","Type","ETD","ETA","공급사","박스","PLT","수량(EA)","총 금액","서류","특이사항"];
+ const TH=["No.","단계","Work","Forwarder","Container No.","Vessel, Voyage","BKG No.","Type","ETD","ETA","공급사","박스","PLT","수량(EA)","총 금액","서류","특이사항"];
  let html='<thead><tr>'+TH.map(function(t,i){
-  return '<th style="background:#1F2937;color:#fff;padding:8px 9px;font-size:11.5px;font-weight:600;white-space:nowrap;text-align:'+(i>=9&&i<=13?"right":"left")+';border:1px solid #374151">'+t+'</th>';
+  return '<th style="background:#1F2937;color:#fff;padding:8px 9px;font-size:11.5px;font-weight:600;white-space:nowrap;text-align:'+(i>=10&&i<=14?"right":"left")+';border:1px solid #374151">'+t+'</th>';
  }).join("")+'</tr></thead><tbody>';
  all.forEach(function(R){
   const w=WK[R.st], key=R.p.code+"|"+R.st;
@@ -2575,7 +2577,7 @@ function drawShip(){
   };
   html+='<tr class="shrow" data-k="'+key+'" style="cursor:pointer;background:#fff;border-bottom:1px solid #E5E7EB">'
    +'<td style="padding:7px 9px;font-weight:700;color:#111827;white-space:nowrap;border:1px solid #E5E7EB"><span class="shcar" data-k="'+key+'">▾</span> '+E(R.p.code)+'-'+E(R.st)+'</td>'
-   +'<td style="padding:7px 9px;border:1px solid #E5E7EB"><span style="font-size:11px;padding:2px 8px;border-radius:99px;background:'+w[1]+';color:'+w[2]+'">'+w[0]+'</span></td>'
+   +'<td style="padding:7px 9px;border:1px solid #E5E7EB"><span style="font-size:11px;padding:2px 8px;border-radius:99px;background:'+STG[R.p.status||"제안"][1]+';color:'+STG[R.p.status||"제안"][2]+'">'+STG[R.p.status||"제안"][0]+'</span></td>'+'<td style="padding:7px 9px;border:1px solid #E5E7EB"><span style="font-size:11px;padding:2px 8px;border-radius:99px;background:'+w[1]+';color:'+w[2]+'">'+w[0]+'</span></td>'
    +'<td style="padding:4px 6px;border:1px solid #E5E7EB">'+inp("forwarder",R.leg.forwarder,"110px","포워더")+'</td>'
    +'<td style="padding:4px 6px;border:1px solid #E5E7EB">'+inp("cntr_no",R.leg.cntr_no,"120px","컨테이너 No.")+'</td>'
    +'<td style="padding:4px 6px;border:1px solid #E5E7EB">'+inp("vessel",R.leg.vessel,"105px","선박")+inp("voyage",R.leg.voyage,"55px","항차")+'</td>'
@@ -2590,7 +2592,7 @@ function drawShip(){
    +'<td style="padding:7px 9px;text-align:right;font-weight:700;color:#111827;white-space:nowrap;border:1px solid #E5E7EB">'+KRW(R.s.krw)+'</td>'
    +'<td style="padding:4px 6px;white-space:nowrap;border:1px solid #E5E7EB"><button class="shdoc" data-k="'+key+'" data-d="PI" style="padding:3px 8px;font-size:11px;border:1px solid #B45309;background:#fff;color:#B45309;border-radius:5px;cursor:pointer;margin-right:3px">PI</button><button class="shdoc" data-k="'+key+'" data-d="PL" style="padding:3px 8px;font-size:11px;border:1px solid #0F766E;background:#fff;color:#0F766E;border-radius:5px;cursor:pointer">PL</button></td>'
    +'<td style="padding:4px 6px;border:1px solid #E5E7EB">'+inp("note",R.leg.note,"100%","특이사항")+'</td></tr>';
-  html+='<tr class="shsub" data-k="'+key+'"><td colspan="16" style="padding:0;border:1px solid #E5E7EB;background:#F9FAFB">'
+  html+='<tr class="shsub" data-k="'+key+'"><td colspan="17" style="padding:0;border:1px solid #E5E7EB;background:#F9FAFB">'
    +'<table style="width:100%;border-collapse:collapse;font-size:11.5px">'
    +'<tr>'+["No","공급사 (Supplier)","제품","박스입수","박스(CTN)","팔레트수","수량(EA)","단가","견적금액_KRW"].map(function(t,i){
      return '<th style="background:#DBEAFE;color:#1E3A5F;padding:6px 9px;text-align:'+(i>=3?"right":"left")+';border:1px solid #BFDBFE">'+t+'</th>';}).join("")+'</tr>';
@@ -2866,6 +2868,7 @@ if($("#shClose")) $("#shClose").onclick=function(){ document.querySelectorAll("t
 if($("#shQ")) $("#shQ").oninput=function(){ drawShip(); };
 if($("#shY")) $("#shY").onchange=function(){ drawShip(); };
 if($("#shM")) $("#shM").onchange=function(){ drawShip(); };
+if($("#shS")) $("#shS").onchange=function(){ drawShip(); };
 if($("#docX"))     $("#docX").onclick=shDocClose;
 if($("#docBk"))    $("#docBk").onclick=shDocClose;
 if($("#docXlsx"))  $("#docXlsx").onclick=shDocXlsx;
@@ -2897,7 +2900,7 @@ if($("#npSave")) $("#npSave").onclick=async function(){
   note:($("#npNote").value||"").trim(), sort:(PLANS.length?99:1)};
  try{ await api({action:"plan_upsert",plan:plan});
   ["npCode","npLabel","npEtd","npEta","npCon","npPod","npNote"].forEach(function(id){ const el=$("#"+id); if(el) el.value=""; });
-  $("#plNewBox").style.display="none"; msg("#plMsg",code+" 회차를 만들었습니다."); await loadPlans();
+  $("#plNewBox").style.display="none"; msg("#plMsg",code+" 회차를 만들었습니다."); await loadPlans(); try{drawShip()}catch(e4){}
  }catch(e){ if(ez) ez.textContent="생성 실패 — "+e.message; msg("#plMsg","생성 실패 — "+e.message,1); }
 };
 if($("#plReload")) $("#plReload").onclick=function(){loadPlans()};
