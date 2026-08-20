@@ -629,7 +629,7 @@ body.pub #topOut, body.pub #sideOut{display:none!important}
    <p class="hint">납품구성에서 <b>납품확정</b>된 회차가 보관구획별 컨테이너로 표시됩니다. 행을 누르면 공급사별 내역이 펼쳐집니다.</p>
    <div class="bd">
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
-     <select id="shS" style="padding:7px 10px;border:1px solid #E5E7EB;border-radius:8px;font-size:13px"><option value="">전체 단계</option><option value="확정">납품확정만</option><option value="협의">제품협의</option><option value="제안">제품제안</option></select>
+     <select id="shS" style="padding:7px 10px;border:1px solid #E5E7EB;border-radius:8px;font-size:13px"><option value="확정">납품확정만</option><option value="">확정+제안</option><option value="제안">제품제안</option></select>
      <select id="shY" style="padding:7px 10px;border:1px solid #E5E7EB;border-radius:8px;font-size:13px"></select>
      <select id="shM" style="padding:7px 10px;border:1px solid #E5E7EB;border-radius:8px;font-size:13px"></select>
      <button id="shOpen" class="gbtn" style="width:auto;padding:7px 14px;background:#fff;color:#6B7280;border:1px solid #E5E7EB">모두 펼치기</button>
@@ -2541,7 +2541,7 @@ function drawShip(){
  const WK={"냉동":["냉동","#EFF6FF","#1D4ED8"],"냉장":["냉장","#F0FDFA","#0F766E"],"상온":["상온","#FFFBEB","#B45309"]};
  let all=[];
  const fs=($("#shS")&&$("#shS").value)||"";
- PLANS.filter(function(p){return !fs||(p.status||"제안")===fs}).forEach(function(p){
+ PLANS.filter(function(p){ const s=p.status||"제안"; if(s==="협의") return false; return !fs||s===fs; }).forEach(function(p){
   PLST.forEach(function(st){
    const list=plList(p.code,st); if(!list.length) return;
    all.push({p:p,st:st,leg:plLeg(p.code,st),list:list,s:plSum(list)});
