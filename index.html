@@ -404,6 +404,7 @@ body.pub #topOut, body.pub #sideOut{display:none!important}
   <button data-t="prod" id="navProd" style="display:none"><em>🗄️</em>전체 제품 마스터</button>
   <button data-t="quote"><em>🧮</em><span id="navQ">견적 산출</span></button>
   <button data-t="plan"><em>🚢</em>납품구성</button>
+  <button data-t="ship"><em>📦</em>선적확정</button>
   <button data-t="comp"><em>⚖️</em>수출 규정</button>
   <button data-t="rfq" id="navRfq"><em>📥</em>RFQ 양식</button>
   <button data-t="form" id="navForm"><em>📄</em>엑셀 양식</button>
@@ -608,6 +609,21 @@ body.pub #topOut, body.pub #sideOut{display:none!important}
      <div id="plBoard" style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;align-items:flex-start;flex:1;min-width:0"></div>
      <div id="plInfo" style="flex:none;width:390px;border:1px solid #E5E7EB;border-radius:14px;padding:0;background:#fff;max-height:82vh;overflow:auto;position:sticky;top:12px;box-shadow:0 1px 3px rgba(17,24,39,.06)"></div>
     </div>
+   </div></div>
+ </div></section>
+
+ <section id="ship"><div class="wrap">
+  <div class="kpis" id="shKpi"></div>
+  <div class="panel"><h3>선적확정 — 컨테이너 현황</h3>
+   <p class="hint">납품구성에서 <b>납품확정</b>된 회차가 보관구획별 컨테이너로 표시됩니다. 행을 누르면 공급사별 내역이 펼쳐집니다.</p>
+   <div class="bd">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+     <button id="shOpen" class="gbtn" style="width:auto;padding:7px 14px;background:#fff;color:#6B7280;border:1px solid #E5E7EB">모두 펼치기</button>
+     <button id="shClose" class="gbtn" style="width:auto;padding:7px 14px;background:#fff;color:#6B7280;border:1px solid #E5E7EB">모두 접기</button>
+     <input id="shQ" placeholder="공급사·제품 검색" style="flex:1;min-width:180px;padding:7px 12px;border:1px solid #E5E7EB;border-radius:8px;font-size:13px">
+     <span id="shMsg" class="hint" style="margin:0"></span>
+    </div>
+    <div style="overflow-x:auto"><table id="shTbl" style="width:100%;border-collapse:collapse;font-size:12px;min-width:1180px"></table></div>
    </div></div>
  </div></section>
 
@@ -918,7 +934,7 @@ const TITLES={dash:["대시보드","전체 품목 현황과 카테고리 분포"
  form:["엑셀 양식","업로드·다운로드용 양식 모음"],
  acct:["회원 관리","가입 승인 · 권한 · 계정 상태 관리"]};
 
-const TABDEF=[["dash","📊 대시보드"],["cat","🗂️ 카테고리"],["brand","🏷️ 브랜드"],["prod","🗄️ 제품 마스터"],["quote","🧮 견적 산출"],["plan","🚢 납품구성"],["comp","⚖️ 수출 규정"],["rfq","📥 RFQ 양식"],["form","📄 엑셀 양식"],["acct","👤 회원 관리"]];
+const TABDEF=[["dash","📊 대시보드"],["cat","🗂️ 카테고리"],["brand","🏷️ 브랜드"],["prod","🗄️ 제품 마스터"],["quote","🧮 견적 산출"],["plan","🚢 납품구성"],["ship","📦 선적확정"],["comp","⚖️ 수출 규정"],["rfq","📥 RFQ 양식"],["form","📄 엑셀 양식"],["acct","👤 회원 관리"]];
 function myTabs(){ if(!ME) return TABDEF.map(t=>t[0]); if(ME.role==="master") return TABDEF.map(t=>t[0]); return (ME.tabs&&ME.tabs.length)?ME.tabs:["dash","cat","brand","quote","plan","comp","rfq","form"]; }
 function canTab(t){ return myTabs().indexOf(t)>=0; }
 function applyTabs(){ const my=myTabs(); $$("#side nav button").forEach(function(b){ b.style.display = my.indexOf(b.dataset.t)>=0 ? "" : "none"; }); }
@@ -2481,7 +2497,7 @@ function plBind(){
    if(p.status===next) return;
    if(next==="확정"&&PLDIRTY){ msg("#plMsg","저장하지 않은 변경이 있습니다. 먼저 저장하세요.",1); return; }
    try{ await api({action:"plan_status",code:code,status:next}); p.status=next;
-    msg("#plMsg",code+" — "+STG[next][0]); drawPlan(); }
+    msg("#plMsg",code+" — "+STG[next][0]); drawPlan(); try{drawShip()}catch(e){} }
    catch(e){ msg("#plMsg","실패 — "+e.message,1); }
   };
  });
@@ -2498,10 +2514,121 @@ async function loadPlans(){
    const _p=i.qty_plt!=null?+i.qty_plt:null, _e=i.qty_units!=null?+i.qty_units:null;
    PLQ[k].push({no:i.row_no, plt:_p, ea:_e, upl:(_p&&_e)?Math.round(_e/_p):null, unit:i.unit_krw!=null?+i.unit_krw:null, amt:i.amount_krw!=null?+i.amount_krw:null});
   });
-  PLDIRTY=false; drawPlan();
+  PLDIRTY=false; drawPlan(); try{drawShip()}catch(e){}
  }catch(e){ msg("#plMsg","불러오기 실패 — "+e.message,1); }
 }
 if($("#plSave")) $("#plSave").onclick=async function(){ if(!isMaster()){ msg("#plMsg","마스터만 저장할 수 있습니다.",1); return; } try{ for(const p of PLANS){ if(p.status==="확정") continue; let rows=[]; PLST.forEach(function(st){ plList(p.code,st).forEach(function(r){ rows.push({row_no:r.no,pos:rows.length,qty_plt:r.plt,qty_units:r.ea,unit_krw:r.unit,amount_krw:r.amt}); }); }); await api({action:"plan_save",code:p.code,rows:rows}); } PLDIRTY=false; msg("#plMsg","저장했습니다."); }catch(e){ msg("#plMsg","저장 실패 — "+e.message,1); } };
+/* ===== 선적확정 ===== */
+function drawShip(){
+ const tb=$("#shTbl"); if(!tb) return;
+ const q=(($("#shQ")&&$("#shQ").value)||"").trim().toLowerCase();
+ const WK={"냉동":["냉동","#EFF6FF","#1D4ED8"],"냉장":["냉장","#F0FDFA","#0F766E"],"상온":["상온","#FFFBEB","#B45309"]};
+ const rows=[];
+ PLANS.filter(function(p){return p.status==="확정"}).forEach(function(p){
+  PLST.forEach(function(st){
+   const list=plList(p.code,st); if(!list.length) return;
+   const leg=plLeg(p.code,st), s=plSum(list);
+   const by={};
+   list.forEach(function(r){ const x=plItem(r.no); if(!x) return;
+    const b=BNM(x)||"기타"; (by[b]=by[b]||[]).push(r); });
+   rows.push({p:p,st:st,leg:leg,s:s,by:by,list:list});
+  });
+ });
+ if(!rows.length){
+  tb.innerHTML='<tr><td style="padding:26px;text-align:center;color:#9CA3AF;font-size:13px">납품확정된 회차가 없습니다. 납품구성 탭에서 회차를 <b>납품확정</b>으로 옮기면 여기에 컨테이너로 표시됩니다.</td></tr>';
+  if($("#shKpi")) $("#shKpi").innerHTML='<div class="kpi"><span>컨테이너</span><b>0</b><i>확정 대기</i></div>';
+  return;
+ }
+ const TH=["No.","Work","Forwarder","Container No.","Vessel, Voyage","BKG No.","Type","ETD","ETA","공급사","PLT","총 금액","특이사항"];
+ let html='<thead><tr>'+TH.map(function(t,i){
+  return '<th style="background:#1F2937;color:#fff;padding:8px 9px;font-size:11.5px;font-weight:600;white-space:nowrap;text-align:'+(i>=9&&i<=11?"right":"left")+';border:1px solid #374151">'+t+'</th>';
+ }).join("")+'</tr></thead><tbody>';
+ rows.forEach(function(R,i){
+  const w=WK[R.st], nsup=Object.keys(R.by).length;
+  const key=R.p.code+"|"+R.st;
+  const inp=function(f,v,w2,ph){
+   return '<input class="shleg" data-code="'+R.p.code+'" data-st="'+R.st+'" data-f="'+f+'" value="'+E(v||"")+'" placeholder="'+ph+'" '+(isMaster()?"":"readonly")+' style="width:'+w2+';padding:2px 5px;font-size:11.5px;border:1px solid transparent;background:transparent;border-radius:4px" onfocus="this.style.borderColor=\'#E5E7EB\';this.style.background=\'#fff\'" onblur="this.style.borderColor=\'transparent\';this.style.background=\'transparent\'">';
+  };
+  const vv=(R.leg.vessel||"")+(R.leg.voyage?" "+R.leg.voyage:"");
+  html+='<tr class="shrow" data-k="'+key+'" style="cursor:pointer;background:#fff;border-bottom:1px solid #E5E7EB">'
+   +'<td style="padding:7px 9px;font-weight:700;color:#111827;white-space:nowrap;border:1px solid #E5E7EB"><span class="shcar" data-k="'+key+'">▸</span> '+E(R.p.code)+'-'+E(R.st)+'</td>'
+   +'<td style="padding:7px 9px;border:1px solid #E5E7EB"><span style="font-size:11px;padding:2px 8px;border-radius:99px;background:'+w[1]+';color:'+w[2]+'">'+w[0]+'</span></td>'
+   +'<td style="padding:4px 6px;border:1px solid #E5E7EB">'+inp("forwarder",R.leg.forwarder,"110px","포워더")+'</td>'
+   +'<td style="padding:4px 6px;border:1px solid #E5E7EB">'+inp("cntr_no",R.leg.cntr_no,"120px","컨테이너 No.")+'</td>'
+   +'<td style="padding:4px 6px;border:1px solid #E5E7EB">'+inp("vessel",R.leg.vessel,"110px","선박")+inp("voyage",R.leg.voyage,"60px","항차")+'</td>'
+   +'<td style="padding:4px 6px;border:1px solid #E5E7EB">'+inp("bkg_no",R.leg.bkg_no,"100px","BKG No.")+'</td>'
+   +'<td style="padding:4px 6px;border:1px solid #E5E7EB">'+inp("cntr_type",R.leg.cntr_type,"110px","40RF x 1")+'</td>'
+   +'<td style="padding:7px 9px;white-space:nowrap;border:1px solid #E5E7EB">'+E(R.leg.etd||"—")+'</td>'
+   +'<td style="padding:7px 9px;white-space:nowrap;border:1px solid #E5E7EB">'+E(R.leg.eta||"—")+'</td>'
+   +'<td style="padding:7px 9px;text-align:right;border:1px solid #E5E7EB">'+nsup+'</td>'
+   +'<td style="padding:7px 9px;text-align:right;font-weight:600;border:1px solid #E5E7EB">'+R.s.plt+'</td>'
+   +'<td style="padding:7px 9px;text-align:right;font-weight:700;color:#111827;white-space:nowrap;border:1px solid #E5E7EB">'+KRW(R.s.krw)+'<span style="color:#9CA3AF;font-weight:400;margin-left:6px">'+USD(R.s.krw)+'</span></td>'
+   +'<td style="padding:4px 6px;border:1px solid #E5E7EB">'+inp("note",R.leg.note,"100%","특이사항")+'</td></tr>';
+  const sups=Object.keys(R.by).sort();
+  html+='<tr class="shsub" data-k="'+key+'" style="display:none"><td colspan="13" style="padding:0;border:1px solid #E5E7EB;background:#F9FAFB">'
+   +'<table style="width:100%;border-collapse:collapse;font-size:11.5px">'
+   +'<tr><th style="background:#DBEAFE;color:#1E3A5F;padding:6px 9px;text-align:left;border:1px solid #BFDBFE;width:40px">No</th>'
+   +'<th style="background:#DBEAFE;color:#1E3A5F;padding:6px 9px;text-align:left;border:1px solid #BFDBFE">공급사 (Supplier)</th>'
+   +'<th style="background:#DBEAFE;color:#1E3A5F;padding:6px 9px;text-align:left;border:1px solid #BFDBFE">제품</th>'
+   +'<th style="background:#DBEAFE;color:#1E3A5F;padding:6px 9px;text-align:right;border:1px solid #BFDBFE;width:80px">팔레트수</th>'
+   +'<th style="background:#DBEAFE;color:#1E3A5F;padding:6px 9px;text-align:right;border:1px solid #BFDBFE;width:70px">수량</th>'
+   +'<th style="background:#DBEAFE;color:#1E3A5F;padding:6px 9px;text-align:right;border:1px solid #BFDBFE;width:110px">견적금액_KRW</th>'
+   +'<th style="background:#DBEAFE;color:#1E3A5F;padding:6px 9px;text-align:right;border:1px solid #BFDBFE;width:100px">견적금액_USD</th></tr>';
+  sups.forEach(function(b,j){
+   const arr=R.by[b], ss=plSum(arr);
+   const first=plItem(arr[0].no);
+   const label=E(first?first.ko:"")+(arr.length>1?' 외 '+(arr.length-1)+'건':"");
+   const hit=!q||b.toLowerCase().indexOf(q)>=0||arr.some(function(r){const x=plItem(r.no);return x&&(x.ko+" "+(x.en||"")).toLowerCase().indexOf(q)>=0;});
+   html+='<tr style="background:'+(hit?"#fff":"#F3F4F6")+';opacity:'+(hit?1:.45)+'">'
+    +'<td style="padding:6px 9px;border:1px solid #E5E7EB">'+(j+1)+'</td>'
+    +'<td style="padding:6px 9px;border:1px solid #E5E7EB;font-weight:600">'+E(b)+'</td>'
+    +'<td style="padding:6px 9px;border:1px solid #E5E7EB;color:#374151">'+label+'</td>'
+    +'<td style="padding:6px 9px;border:1px solid #E5E7EB;text-align:right">'+ss.plt+'</td>'
+    +'<td style="padding:6px 9px;border:1px solid #E5E7EB;text-align:right">'+ss.units.toLocaleString()+'</td>'
+    +'<td style="padding:6px 9px;border:1px solid #E5E7EB;text-align:right">'+KRW(ss.krw)+'</td>'
+    +'<td style="padding:6px 9px;border:1px solid #E5E7EB;text-align:right;color:#6B7280">'+USD(ss.krw)+'</td></tr>';
+  });
+  html+='<tr style="background:#FEF9C3;font-weight:700"><td colspan="3" style="padding:6px 9px;border:1px solid #E5E7EB;text-align:right">합계</td>'
+   +'<td style="padding:6px 9px;border:1px solid #E5E7EB;text-align:right">'+R.s.plt+'</td>'
+   +'<td style="padding:6px 9px;border:1px solid #E5E7EB;text-align:right">'+R.s.units.toLocaleString()+'</td>'
+   +'<td style="padding:6px 9px;border:1px solid #E5E7EB;text-align:right">'+KRW(R.s.krw)+'</td>'
+   +'<td style="padding:6px 9px;border:1px solid #E5E7EB;text-align:right">'+USD(R.s.krw)+'</td></tr></table></td></tr>';
+ });
+ tb.innerHTML=html+'</tbody>';
+ const tot=rows.reduce(function(a,R){return {n:a.n+1,plt:a.plt+R.s.plt,krw:a.krw+R.s.krw,kg:a.kg+R.s.kg};},{n:0,plt:0,krw:0,kg:0});
+ $("#shKpi").innerHTML='<div class="kpi"><span>컨테이너</span><b>'+tot.n+'</b><i>확정 선적</i></div>'
+  +'<div class="kpi blu"><span>총 파렛트</span><b>'+(Math.round(tot.plt*100)/100)+'</b><i>'+tot.kg.toLocaleString()+' kg</i></div>'
+  +'<div class="kpi grn"><span>총 금액</span><b style="font-size:16px">'+KRW(tot.krw)+'</b><i>'+USD(tot.krw)+'</i></div>';
+ shBind();
+}
+function shBind(){
+ document.querySelectorAll("tr.shrow").forEach(function(tr){
+  tr.onclick=function(e){
+   if(e.target.tagName==="INPUT") return;
+   const k=tr.dataset.k;
+   document.querySelectorAll('tr.shsub[data-k="'+k+'"]').forEach(function(s){
+    s.style.display = s.style.display==="none" ? "" : "none";
+   });
+   const c=tr.querySelector(".shcar"); if(c) c.textContent = c.textContent==="▸" ? "▾" : "▸";
+  };
+ });
+ document.querySelectorAll("input.shleg").forEach(function(el){
+  el.onclick=function(e){ e.stopPropagation(); };
+  el.onchange=async function(){
+   if(!isMaster()) return;
+   const code=el.dataset.code, st=el.dataset.st, f=el.dataset.f;
+   const k=plKey(code,st); LEGS[k]=LEGS[k]||{plan_code:code,storage:st};
+   LEGS[k][f]=el.value||null;
+   const leg={plan_code:code,storage:st}; leg[f]=el.value||"";
+   try{ await api({action:"plan_leg",leg:leg}); msg("#shMsg",code+" · "+st+" 저장했습니다."); }
+   catch(e){ msg("#shMsg","저장 실패 — "+e.message,1); }
+  };
+ });
+}
+if($("#shOpen")) $("#shOpen").onclick=function(){ document.querySelectorAll("tr.shsub").forEach(function(s){s.style.display="";}); document.querySelectorAll(".shcar").forEach(function(c){c.textContent="▾";}); };
+if($("#shClose")) $("#shClose").onclick=function(){ document.querySelectorAll("tr.shsub").forEach(function(s){s.style.display="none";}); document.querySelectorAll(".shcar").forEach(function(c){c.textContent="▸";}); };
+if($("#shQ")) $("#shQ").oninput=function(){ drawShip(); };
+
 if($("#plNew")) $("#plNew").onclick=function(){ const b=$("#plNewBox"); if(!b) return;
  if(!isMaster()){ msg("#plMsg","마스터만 회차를 만들 수 있습니다.",1); return; }
  const show = b.style.display==="none";
