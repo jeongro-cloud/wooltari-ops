@@ -2640,7 +2640,7 @@ function drawSett(){
   const CO=[["NO",42],["분류코드",112],["상호명",150],["품명",170],
    [kind==="receivable"?"계산서발행일자":"제품인도일자",110],["결재조건",106],
    ["담당자",96],["연락처",120],["이메일",180],["발행금액",118],
-   [kind==="receivable"?"발행여부":"지급여부",92],["",40]];
+   [kind==="receivable"?"발행여부":"지급여부",92],[kind==="payable"?"발주(PO)":"",kind==="payable"?150:1],["",40]];
   let o='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
    +'<b style="font-size:13.5px;color:'+color+'">'+title+'</b>'
    +'<span style="font-size:11.5px;color:#6B7280">'+rows.length+'건 · '+done+'건 완료</span>'
@@ -2656,7 +2656,7 @@ function drawSett(){
    const td='padding:3px 4px;border:1px solid #E5E7EB';
    const isDone=(x.status===statusOpts[0]);
    o+='<tr style="background:'+(isDone?"#F0FDF4":"#fff")+'">'
-    +'<td style="'+td+';text-align:center;color:#6B7280">'+(i+1)+'</td>'
+    +'<td style="'+td+';text-align:center;color:#6B7280;cursor:'+(kind==="payable"?"pointer":"default")+'" '+(kind==="payable"?'class="stExp" data-id="'+x.id+'"':'')+'>'+(kind==="payable"?'<span class="stCar" data-id="'+x.id+'">▸</span> ':'')+(i+1)+'</td>'
     +'<td style="'+td+'"><select class="sts" data-id="'+x.id+'" data-f="plan_code" style="width:100%;font-size:11.5px;border:1px solid transparent;background:transparent;padding:3px">'
       +'<option value="">—</option>'+PLANS.map(function(p){return '<option value="'+p.code+'"'+(x.plan_code===p.code?' selected':'')+'>'+E(p.code)+'</option>'}).join("")+'</select></td>'
     +'<td style="'+td+'">'+inp("company",x.company)+'</td>'
@@ -2669,7 +2669,14 @@ function drawSett(){
     +'<td style="'+td+'">'+inp("amount_krw",x.amount_krw,null,"right")+'</td>'
     +'<td style="'+td+'"><select class="sts" data-id="'+x.id+'" data-f="status" style="width:100%;font-size:11.5px;font-weight:600;color:'+(isDone?"#15803D":"#B45309")+';border:1px solid transparent;background:transparent;padding:3px">'
       +statusOpts.map(function(s){return '<option'+(x.status===s?' selected':'')+'>'+s+'</option>'}).join("")+'</select></td>'
+    +(kind==="payable"?('<td style="'+td+';white-space:nowrap;text-align:center">'
+  +(x.po_no?'<span style="font-size:11px;font-weight:700;color:#15803D">'+E(x.po_no)+'</span>'
+    +' <button class="stPo" data-id="'+x.id+'" data-a="doc" style="padding:2px 7px;font-size:10.5px;border:1px solid #15803D;background:#fff;color:#15803D;border-radius:5px;cursor:pointer">보기</button>'
+    +' <button class="stPo" data-id="'+x.id+'" data-a="cancel" style="padding:2px 6px;font-size:10.5px;border:1px solid #E5E7EB;background:#fff;color:#9CA3AF;border-radius:5px;cursor:pointer">취소</button>'
+   :'<button class="stPo" data-id="'+x.id+'" data-a="issue" style="padding:3px 12px;font-size:11px;border:1px solid #B45309;background:#fff;color:#B45309;border-radius:6px;cursor:pointer;font-weight:600">발주서 발행</button>')
+  +'</td>'):'')
     +'<td style="'+td+';text-align:center"><button class="stDel" data-id="'+x.id+'" style="width:22px;height:22px;border-radius:5px;border:1px solid #FECACA;background:#fff;color:#DC2626;font-size:12px;cursor:pointer">×</button></td></tr>';
+   if(kind==="payable"){ o+='<tr class="stSub" data-id="'+x.id+'" style="display:none"><td colspan="13" style="padding:0;border:1px solid #E5E7EB;background:#F9FAFB">'+stItems(x)+'</td></tr>'; }
   });
   o+='<tr style="background:#FEF9C3;font-weight:700"><td colspan="9" style="padding:7px 9px;border:1px solid #E5E7EB;text-align:right">합계</td>'
    +'<td style="padding:7px 9px;border:1px solid #E5E7EB;text-align:right">'+KRW(tot)+'</td>'
@@ -2727,6 +2734,7 @@ function settBind(){
    }catch(e){ msg("#stMsg","추가 실패 — "+e.message,1); }
   };
  });
+ try{stExtraBind()}catch(e){}
 }
 async function loadSett(){
  if(!(ME&&ME.role==="master")) return;
@@ -2928,6 +2936,101 @@ if($("#mgXlsx")) $("#mgXlsx").onclick=function(){
   msg("#mgMsg","엑셀을 내려받았습니다.");
  }catch(e){ msg("#mgMsg","엑셀 실패 — "+e.message,1); }
 };
+
+/* ===== 출납 품목상세 · 발주서 ===== */
+function stItems(x){
+ const code=x.plan_code||"", comp=(x.company||"").trim();
+ if(!code||!comp) return '<div style="padding:12px;color:#9CA3AF;font-size:11.5px">회차와 상호명이 있어야 품목을 표시합니다.</div>';
+ let rows=[];
+ PLST.forEach(function(st){
+  plList(code,st).forEach(function(r){
+   const p=plItem(r.no); if(!p) return;
+   const sup=(p.sup||BNM(p)||"").trim();
+   if(sup!==comp) return;
+   rows.push({st:st,r:r,p:p});
+  });
+ });
+ if(!rows.length) return '<div style="padding:12px;color:#9CA3AF;font-size:11.5px">'+E(comp)+' 품목이 '+E(code)+'에 없습니다.</div>';
+ const th='background:#DBEAFE;color:#1E3A5F;padding:5px 8px;border:1px solid #BFDBFE;font-size:11px;font-weight:700';
+ const td='padding:4px 8px;border:1px solid #E5E7EB;font-size:11px';
+ let tBuy=0,tEa=0,tBox=0;
+ let o='<table style="width:100%;border-collapse:collapse">'
+  +'<tr>'+["보관","연번","제품명","박스","수량(EA)","매입단가","금액"].map(function(t,i){
+    return '<th style="'+th+';text-align:'+(i>=3?"right":"left")+'">'+t+'</th>';}).join("")+'</tr>';
+ rows.forEach(function(z){
+  const unit=plUnit(z.r), rate=(typeof mgRate==="function"?mgRate(z.p):0.15);
+  const buy=z.p.buy || Math.round(unit*(1-rate));
+  const ea=z.r.ea||0, box=(z.p.upc&&ea)?Math.round(ea/z.p.upc):null;
+  const amt=buy*ea;
+  tBuy+=amt; tEa+=ea; tBox+=(box||0);
+  o+='<tr style="background:#fff">'
+   +'<td style="'+td+'">'+z.st+'</td>'
+   +'<td style="'+td+'">'+String(z.r.no).padStart(2,"0")+'</td>'
+   +'<td style="'+td+';color:#374151">'+E(z.p.ko)+'</td>'
+   +'<td style="'+td+';text-align:right">'+(box!=null?box.toLocaleString():"—")+'</td>'
+   +'<td style="'+td+';text-align:right">'+ea.toLocaleString()+'</td>'
+   +'<td style="'+td+';text-align:right">'+buy.toLocaleString()+'</td>'
+   +'<td style="'+td+';text-align:right;font-weight:600">'+amt.toLocaleString()+'</td></tr>';
+ });
+ o+='<tr style="background:#FEF9C3;font-weight:700"><td colspan="3" style="'+td+';text-align:right">합계</td>'
+  +'<td style="'+td+';text-align:right">'+tBox.toLocaleString()+'</td>'
+  +'<td style="'+td+';text-align:right">'+tEa.toLocaleString()+'</td>'
+  +'<td style="'+td+'"></td>'
+  +'<td style="'+td+';text-align:right">'+tBuy.toLocaleString()+'</td></tr></table>';
+ const diff=tBuy-(+x.amount_krw||0);
+ if(diff!==0) o+='<div style="padding:7px 10px;font-size:11px;color:#DC2626;background:#FEF2F2">품목 합계와 발행금액이 '+Math.abs(diff).toLocaleString()+'원 차이납니다.</div>';
+ return o;
+}
+function stPoDoc(id){
+ const x=(SETT||[]).find(function(z){return z.id===id}); if(!x) return;
+ const today=new Date().toISOString().slice(0,10);
+ const cw='padding:7px 10px;border:1px solid #111827;font-size:12px';
+ let o='<div style="background:#fff;padding:28px 32px;font-family:Arial,Malgun Gothic,sans-serif;max-width:900px;margin:0 auto">'
+  +'<div style="text-align:center;font-size:21px;font-weight:700;letter-spacing:.06em;margin-bottom:20px">발 주 서 (Purchase Order)</div>'
+  +'<table style="width:100%;border-collapse:collapse;margin-bottom:14px">'
+  +'<tr><td style="'+cw+';width:16%;background:#F3F4F6;font-weight:700">발주번호</td><td style="'+cw+'">'+E(x.po_no||"—")+'</td>'
+  +'<td style="'+cw+';width:16%;background:#F3F4F6;font-weight:700">발주일자</td><td style="'+cw+'">'+E(x.po_date||today)+'</td></tr>'
+  +'<tr><td style="'+cw+';background:#F3F4F6;font-weight:700">공급자</td><td style="'+cw+'">'+E(x.company||"")+'</td>'
+  +'<td style="'+cw+';background:#F3F4F6;font-weight:700">담당자</td><td style="'+cw+'">'+E(x.manager||"")+' '+E(x.tel||"")+'</td></tr>'
+  +'<tr><td style="'+cw+';background:#F3F4F6;font-weight:700">발주처</td><td style="'+cw+'">WOOLTARI KOREA CO.,LTD</td>'
+  +'<td style="'+cw+';background:#F3F4F6;font-weight:700">회차</td><td style="'+cw+'">'+E(x.plan_code||"")+'</td></tr>'
+  +'<tr><td style="'+cw+';background:#F3F4F6;font-weight:700">납품일자</td><td style="'+cw+'">'+E(x.due_date||"")+'</td>'
+  +'<td style="'+cw+';background:#F3F4F6;font-weight:700">결제조건</td><td style="'+cw+'">'+E(x.terms||"")+'</td></tr>'
+  +'</table>'
+  +stItems(x)
+  +'<div style="margin-top:16px;font-size:12px;line-height:2">'
+  +'<div>· 상기와 같이 발주하오니 납기일에 맞추어 납품하여 주시기 바랍니다.</div>'
+  +'<div>· 납품 시 패킹리스트를 반드시 지참해 주시기 바랍니다.</div>'
+  +'<div>· 호주 수출 건으로 나무팔레트 사용은 불가하며, 플라스틱 팔레트로 작업해 주십시오.</div></div>'
+  +'<table style="width:100%;margin-top:26px;font-size:12px"><tr>'
+  +'<td style="width:50%">발주자<br><b>WOOLTARI KOREA</b><br><br><br>(인)</td>'
+  +'<td>수주자<br><b>'+E(x.company||"")+'</b><br><br><br>(인)</td></tr></table></div>';
+ window.__DOC={po:x};
+ $("#docTitle").textContent='발주서 '+(x.po_no||"")+' — '+(x.company||"");
+ $("#docBody").innerHTML=o;
+ $("#docBk").style.display=""; $("#docW").style.display="";
+}
+function stExtraBind(){
+ document.querySelectorAll(".stExp").forEach(function(el){
+  el.onclick=function(){
+   const id=el.dataset.id;
+   document.querySelectorAll('tr.stSub[data-id="'+id+'"]').forEach(function(s){ s.style.display = s.style.display==="none" ? "" : "none"; });
+   const c=el.querySelector(".stCar"); if(c) c.textContent = c.textContent==="▸" ? "▾" : "▸";
+  };
+ });
+ document.querySelectorAll("button.stPo").forEach(function(b){
+  b.onclick=async function(e){
+   e.stopPropagation();
+   const id=+b.dataset.id, a=b.dataset.a;
+   if(a==="doc"){ stPoDoc(id); return; }
+   if(a==="cancel"){ if(!confirm("발주서를 취소할까요?")) return;
+    try{ await api({action:"po_cancel",id:id}); msg("#stMsg","발주서를 취소했습니다."); await loadSett(); }
+    catch(e2){ msg("#stMsg","실패 — "+e2.message,1); } return; }
+   try{ const r=await api({action:"po_issue",id:id}); msg("#stMsg",r.message||"발행했습니다."); await loadSett(); }
+   catch(e3){ msg("#stMsg","발행 실패 — "+e3.message,1); }
+  };
+ });
+}
 
 /* ===== 기본 입고지 설정 ===== */
 function drawDf(){
