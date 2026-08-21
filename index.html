@@ -713,6 +713,11 @@ body.pub #topOut, body.pub #sideOut{display:none!important}
     </div>
     <div style="overflow:auto;max-height:72vh"><table id="mgTbl" style="width:100%;border-collapse:collapse;font-size:11.5px;min-width:1180px"></table></div>
    </div></div>
+  <div class="panel"><h3>기본 입고지 설정</h3>
+   <p class="hint">보관 구분별 기본값입니다. 새 회차를 만들면 이 값이 자동으로 들어가고, 회차별로 다르면 납품구성에서 덮어쓰면 됩니다.</p>
+   <div class="bd"><div id="dfBox" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:12px"></div>
+    <div style="margin-top:10px"><span id="dfMsg" class="hint" style="margin:0"></span></div>
+   </div></div>
  </div></section>
 
  <section id="comp"><div class="wrap">
@@ -2339,7 +2344,7 @@ const DCOL={req:"#6B7280",sea:"#0F766E",mmpa:"#DC2626",liv:"#7C3AED"};
 drawReg();
 
 /* ===== 납품구성 보드 ===== */
-let PLANS=[], PLQ={}, PLDIRTY=false, PLSEL=null, LEGS={};
+let PLANS=[], PLQ={}, PLDIRTY=false, PLSEL=null, LEGS={}, DEFAULTS=[];
 const PLPOOL="__pool", PLST=["냉장","냉동","상온"];
 function plItem(no){ return D.items.find(x=>x.no===no); }
 const STG={"제안":["제품제안","#EFF6FF","#1D4ED8"],"협의":["제품협의","#FEF3C7","#B45309"],"확정":["납품확정","#DCFCE7","#15803D"]};
@@ -2602,13 +2607,14 @@ async function loadPlans(){
   PLANS=r.plans||[]; PLQ={};
   PLANS.forEach(function(p){ PLST.forEach(function(s){ PLQ[plKey(p.code,s)]=[]; }); });
   LEGS={}; (r.legs||[]).forEach(function(g){ LEGS[plKey(g.plan_code,g.storage)]=g; });
+  DEFAULTS=r.defaults||[];
   (r.items||[]).forEach(function(i){
    const x=plItem(i.row_no); if(!x) return;
    const k=plKey(i.plan_code,plStorage(x)); if(!PLQ[k]) PLQ[k]=[];
    const _p=i.qty_plt!=null?+i.qty_plt:null, _e=i.qty_units!=null?+i.qty_units:null;
    PLQ[k].push({no:i.row_no, plt:_p, ea:_e, upl:(_p&&_e)?Math.round(_e/_p):null, unit:i.unit_krw!=null?+i.unit_krw:null, amt:i.amount_krw!=null?+i.amount_krw:null});
   });
-  PLDIRTY=false; drawPlan(); try{drawShip()}catch(e){} try{mlOpts();mlSups()}catch(e){} try{drawMarg()}catch(e){}
+  PLDIRTY=false; drawPlan(); try{drawShip()}catch(e){} try{mlOpts();mlSups()}catch(e){} try{drawMarg()}catch(e){} try{drawDf()}catch(e){}
  }catch(e){ msg("#plMsg","불러오기 실패 — "+e.message,1); }
 }
 if($("#plSave")) $("#plSave").onclick=async function(){ if(!isMaster()){ msg("#plMsg","마스터만 저장할 수 있습니다.",1); return; } try{ for(const p of PLANS){ if(p.status==="확정") continue; let rows=[]; PLST.forEach(function(st){ plList(p.code,st).forEach(function(r){ rows.push({row_no:r.no,pos:rows.length,qty_plt:r.plt,qty_units:r.ea,unit_krw:r.unit,amount_krw:r.amt}); }); }); await api({action:"plan_save",code:p.code,rows:rows}); } PLDIRTY=false; msg("#plMsg","저장했습니다. 선적확정에 반영되었습니다."); try{drawShip()}catch(e){} }catch(e){ msg("#plMsg","저장 실패 — "+e.message,1); } };
@@ -2922,6 +2928,41 @@ if($("#mgXlsx")) $("#mgXlsx").onclick=function(){
   msg("#mgMsg","엑셀을 내려받았습니다.");
  }catch(e){ msg("#mgMsg","엑셀 실패 — "+e.message,1); }
 };
+
+/* ===== 기본 입고지 설정 ===== */
+function drawDf(){
+ const box=$("#dfBox"); if(!box) return;
+ if(!(ME&&ME.role==="master")) return;
+ const ICO={"냉동":["❄️","#EFF6FF","#1D4ED8"],"냉장":["🧊","#F0FDFA","#0F766E"],"상온":["☀️","#FFFBEB","#B45309"]};
+ const F=[["wh_name","물류지명"],["wh_addr","주소"],["wh_person","담당자"],["wh_tel","연락처"],
+          ["in_time","입고시간"],["box_mark","박스 기재사항"],["pol","선적항(POL)"],["pod","도착항(POD)"]];
+ box.innerHTML=PLST.map(function(st){
+  const d=(DEFAULTS||[]).find(function(z){return z.storage===st})||{storage:st};
+  const c=ICO[st]||["📦","#F3F4F6","#6B7280"];
+  return '<div style="border:1px solid #E5E7EB;border-radius:10px;padding:12px;background:#fff">'
+   +'<div style="font-size:12.5px;font-weight:700;margin-bottom:9px"><span style="padding:2px 9px;border-radius:99px;background:'+c[1]+';color:'+c[2]+'">'+c[0]+' '+st+'</span></div>'
+   +F.map(function(f){
+     return '<div style="margin-bottom:6px"><label style="font-size:10.5px;color:#9CA3AF;display:block">'+f[1]+'</label>'
+      +'<input class="dfi" data-st="'+st+'" data-f="'+f[0]+'" value="'+E(d[f[0]]||"")+'" style="width:100%;padding:5px 8px;font-size:12px;border:1px solid #E5E7EB;border-radius:6px"></div>';
+    }).join("")
+   +'</div>';
+ }).join("");
+ dfBind();
+}
+function dfBind(){
+ document.querySelectorAll("input.dfi").forEach(function(el){
+  el.onchange=async function(){
+   if(!(ME&&ME.role==="master")) return;
+   const st=el.dataset.st, f=el.dataset.f;
+   let d=(DEFAULTS||[]).find(function(z){return z.storage===st});
+   if(!d){ d={storage:st}; DEFAULTS=(DEFAULTS||[]).concat([d]); }
+   d[f]=el.value||null;
+   const row={storage:st}; row[f]=el.value||"";
+   try{ await api({action:"default_save",row:row}); msg("#dfMsg",st+" 기본값을 저장했습니다."); }
+   catch(e){ msg("#dfMsg","저장 실패 — "+e.message,1); }
+  };
+ });
+}
 
 /* ===== 공급안내 메일 ===== */
 function mlOpts(){
