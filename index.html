@@ -409,6 +409,7 @@ body.pub #topOut, body.pub #sideOut{display:none!important}
   <button data-t="rfq" id="navRfq"><em>📥</em>RFQ 양식</button>
   <button data-t="form" id="navForm"><em>📄</em>엑셀 양식</button>
   <button data-t="pmst" id="navPmst" style="display:none"><em>🗃️</em>상품 마스터</button>
+  <button data-t="mail" id="navMail" style="display:none"><em>📧</em>공급안내</button>
   <button data-t="sett" id="navSett" style="display:none"><em>💰</em>출납 처리</button>
   <button data-t="acct" id="navAcct" style="display:none"><em>👤</em>회원 관리</button>
  </nav>
@@ -672,6 +673,30 @@ body.pub #topOut, body.pub #sideOut{display:none!important}
     </div>
     <div id="stR"></div>
     <div id="stP" style="margin-top:22px"></div>
+   </div></div>
+ </div></section>
+
+ <section id="mail"><div class="wrap">
+  <div class="panel"><h3>공급안내 메일 <span style="font-size:11px;padding:2px 9px;border-radius:99px;background:#FEE2E2;color:#DC2626;margin-left:6px">관리자 전용</span></h3>
+   <p class="hint">회차와 보관을 고르면 품목·수량·입고지가 자동으로 채워집니다. 본문은 직접 고쳐 쓸 수 있습니다.</p>
+   <div class="bd">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+     <select id="mlPlan" style="padding:7px 10px;border:1px solid #E5E7EB;border-radius:8px;font-size:13px"></select>
+     <select id="mlSup" style="padding:7px 10px;border:1px solid #E5E7EB;border-radius:8px;font-size:13px"><option value="">전체 공급사</option></select>
+     <button id="mlMake" class="gbtn" style="width:auto;padding:7px 16px">본문 생성</button>
+     <button id="mlCopy" class="gbtn" style="width:auto;padding:7px 14px;background:#fff;color:#6B7280;border:1px solid #E5E7EB">본문 복사</button>
+     <button id="mlMail" class="gbtn" style="width:auto;padding:7px 14px;background:#fff;color:#B45309;border:1px solid #B45309">메일 열기</button>
+     <span id="mlMsg" class="hint" style="margin:0"></span>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
+     <div style="flex:1;min-width:420px">
+      <label style="font-size:11.5px;color:#6B7280">제목</label>
+      <input id="mlSubj" style="width:100%;padding:8px 11px;border:1px solid #E5E7EB;border-radius:8px;font-size:13px;margin:3px 0 10px">
+      <label style="font-size:11.5px;color:#6B7280">본문</label>
+      <textarea id="mlBody" rows="30" style="width:100%;padding:12px;border:1px solid #E5E7EB;border-radius:8px;font-size:12.5px;line-height:1.75;font-family:inherit;white-space:pre-wrap"></textarea>
+     </div>
+     <div id="mlInfo" style="flex:none;width:330px;border:1px solid #E5E7EB;border-radius:10px;padding:14px;background:#F9FAFB;font-size:12px"></div>
+    </div>
    </div></div>
  </div></section>
 
@@ -982,11 +1007,11 @@ const TITLES={dash:["대시보드","전체 품목 현황과 카테고리 분포"
  form:["엑셀 양식","업로드·다운로드용 양식 모음"],
  acct:["회원 관리","가입 승인 · 권한 · 계정 상태 관리"]};
 
-const TABDEF=[["dash","📊 대시보드"],["cat","🗂️ 카테고리"],["brand","🏷️ 브랜드"],["prod","🗄️ 제품 마스터"],["quote","🧮 견적 산출"],["plan","🚢 납품구성"],["ship","📦 선적확정"],["comp","⚖️ 수출 규정"],["rfq","📥 RFQ 양식"],["form","📄 엑셀 양식"],["pmst","🗃️ 상품 마스터"],["sett","💰 출납 처리"],["acct","👤 회원 관리"]];
-function myTabs(){ if(!ME) return TABDEF.map(t=>t[0]); if(ME.role==="master") return TABDEF.map(t=>t[0]); return (ME.tabs&&ME.tabs.length)?ME.tabs.filter(function(t){return t!=="pmst"&&t!=="sett"}):["dash","cat","brand","quote","plan","comp","rfq","form"]; }
+const TABDEF=[["dash","📊 대시보드"],["cat","🗂️ 카테고리"],["brand","🏷️ 브랜드"],["prod","🗄️ 제품 마스터"],["quote","🧮 견적 산출"],["plan","🚢 납품구성"],["ship","📦 선적확정"],["comp","⚖️ 수출 규정"],["rfq","📥 RFQ 양식"],["form","📄 엑셀 양식"],["pmst","🗃️ 상품 마스터"],["mail","📧 공급안내"],["sett","💰 출납 처리"],["acct","👤 회원 관리"]];
+function myTabs(){ if(!ME) return TABDEF.map(t=>t[0]); if(ME.role==="master") return TABDEF.map(t=>t[0]); return (ME.tabs&&ME.tabs.length)?ME.tabs.filter(function(t){return t!=="pmst"&&t!=="sett"&&t!=="mail"}):["dash","cat","brand","quote","plan","comp","rfq","form"]; }
 function canTab(t){ return myTabs().indexOf(t)>=0; }
 function applyTabs(){ const my=myTabs(); $$("#side nav button").forEach(function(b){ b.style.display = my.indexOf(b.dataset.t)>=0 ? "" : "none"; }); }
-function go(t){ if(!canTab(t)) t=myTabs()[0]||"dash"; if((t==="prod"||t==="pmst"||t==="sett") && !(ME&&ME.role==="master")) t="dash"; setTimeout(relang,80);
+function go(t){ if(!canTab(t)) t=myTabs()[0]||"dash"; if((t==="prod"||t==="pmst"||t==="sett"||t==="mail") && !(ME&&ME.role==="master")) t="dash"; setTimeout(relang,80);
  $$("#side nav button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
  $$("main section").forEach(s=>s.classList.toggle("on",s.id===t));
  let TT=TITLES[t]||[t,""];
@@ -2568,7 +2593,7 @@ async function loadPlans(){
    const _p=i.qty_plt!=null?+i.qty_plt:null, _e=i.qty_units!=null?+i.qty_units:null;
    PLQ[k].push({no:i.row_no, plt:_p, ea:_e, upl:(_p&&_e)?Math.round(_e/_p):null, unit:i.unit_krw!=null?+i.unit_krw:null, amt:i.amount_krw!=null?+i.amount_krw:null});
   });
-  PLDIRTY=false; drawPlan(); try{drawShip()}catch(e){}
+  PLDIRTY=false; drawPlan(); try{drawShip()}catch(e){} try{mlOpts();mlSups()}catch(e){}
  }catch(e){ msg("#plMsg","불러오기 실패 — "+e.message,1); }
 }
 if($("#plSave")) $("#plSave").onclick=async function(){ if(!isMaster()){ msg("#plMsg","마스터만 저장할 수 있습니다.",1); return; } try{ for(const p of PLANS){ if(p.status==="확정") continue; let rows=[]; PLST.forEach(function(st){ plList(p.code,st).forEach(function(r){ rows.push({row_no:r.no,pos:rows.length,qty_plt:r.plt,qty_units:r.ea,unit_krw:r.unit,amount_krw:r.amt}); }); }); await api({action:"plan_save",code:p.code,rows:rows}); } PLDIRTY=false; msg("#plMsg","저장했습니다. 선적확정에 반영되었습니다."); try{drawShip()}catch(e){} }catch(e){ msg("#plMsg","저장 실패 — "+e.message,1); } };
@@ -2781,6 +2806,126 @@ if($("#pmXlsx")) $("#pmXlsx").onclick=function(){
   XLSX.writeFile(wb,"PRODUCT_MASTER_"+new Date().toISOString().slice(0,10)+".xlsx");
   msg("#pmMsg","엑셀을 내려받았습니다.");
  }catch(e){ msg("#pmMsg","엑셀 실패 — "+e.message,1); }
+};
+
+/* ===== 공급안내 메일 ===== */
+function mlOpts(){
+ const s=$("#mlPlan"); if(!s) return;
+ let o=[];
+ PLANS.forEach(function(p){
+  PLST.forEach(function(st){
+   if(plList(p.code,st).length) o.push('<option value="'+p.code+'|'+st+'">'+E(p.label||p.code)+' · '+st+'</option>');
+  });
+ });
+ if(s.options.length!==o.length) s.innerHTML=o.join("");
+}
+function mlSups(){
+ const v=($("#mlPlan")&&$("#mlPlan").value)||""; if(!v) return;
+ const a=v.split("|"), list=plList(a[0],a[1]);
+ const set=[...new Set(list.map(function(r){const x=plItem(r.no); return x?(x.sup||BNM(x)||"기타"):null;}).filter(Boolean))].sort();
+ const s=$("#mlSup"); if(!s) return;
+ s.innerHTML='<option value="">전체 공급사</option>'+set.map(function(b){return '<option>'+E(b)+'</option>'}).join("");
+}
+function mlBuild(){
+ const v=($("#mlPlan")&&$("#mlPlan").value)||"";
+ if(!v){ msg("#mlMsg","회차를 선택하세요.",1); return; }
+ const a=v.split("|"), code=a[0], st=a[1];
+ const p=PLANS.find(function(q){return q.code===code});
+ const leg=plLeg(code,st);
+ const supF=($("#mlSup")&&$("#mlSup").value)||"";
+ let list=plList(code,st);
+ if(supF) list=list.filter(function(r){const x=plItem(r.no); return x&&((x.sup||BNM(x))===supF);});
+ if(!list.length){ msg("#mlMsg","해당 조건의 품목이 없습니다.",1); return; }
+ const fd=function(d){ if(!d) return "(미정)"; const t=String(d).split("-");
+  return t.length===3 ? (t[1].replace(/^0/,"")+"/"+t[2].replace(/^0/,"")) : String(d); };
+ const lines=list.map(function(r){
+  const x=plItem(r.no); if(!x) return "";
+  const box=(x.upc&&r.ea)?Math.round(r.ea/x.upc):null;
+  return "  - "+x.ko+": "+(r.plt!=null?r.plt+"팔렛":"")+(box!=null?" ("+box+"BOX / "+(r.ea||0)+"ea)":"");
+ }).filter(Boolean).join("\n");
+ const upcs=[...new Set(list.map(function(r){const x=plItem(r.no); return x&&x.upc?x.upc:null;}).filter(Boolean))];
+ const upcNote=upcs.length===1 ? "\n    ※ 각 품목당 1박스 "+upcs[0]+"ea 기준입니다." : "";
+ let subj="", body="";
+ if(st==="상온"){
+  subj="[울타리] "+(p.label||code)+" 상온 컨테이너 일정 및 발송 안내";
+  body="상온 컨테이너 일정을 다음과 같이 공유해 드립니다. 영문 라벨을 전달해 드리니, 확인 부탁드리며 아래의 주소로 물품 발송을 요청드립니다.\n\n"
+   +"[상온 컨테이너 일정 및 안내]\n\n"
+   +"  - 컨작업: "+fd(leg.work_date||leg.etd)+"\n"
+   +"  - 물류지: "+(leg.wh_addr||"")+" "+(leg.wh_name||"")+"\n"
+   +"  - 받는분: "+(leg.wh_name||"")+"\n"
+   +"  - 담당자: "+(leg.wh_person||"")+" ("+(leg.wh_tel||"")+")\n"
+   +"  - 박스 기재 사항: "+(leg.box_mark||"")+"\n\n"
+   +"[발송 대상 품목 및 수량]\n\n"+lines+upcNote+"\n\n"
+   +"[라벨 작성 및 부착 안내]\n\n"
+   +"  - 업체명을 반드시 입력해 주시기 바랍니다.\n"
+   +"  - BOX No를 기재해 주세요. (예: 20개 박스 중 5번째 박스일 경우 '5/20'으로 표기)\n"
+   +"  - 박스 내 품목이 5개 이상일 경우, 표를 추가하여 작성해 주시기 바랍니다.\n"
+   +"  - 내용을 모두 기입한 후 출력하여, 매 박스마다 부착해 주시기 바랍니다.\n\n"
+   +"[입고 및 운송 안내]\n\n"
+   +"  - 공통 사항: 평일 업무시간 내에만 입고가 가능합니다. (업무 시간 외 입고 시 분실 및 파손 위험이 있습니다.) 입고 마감 시간 임박 시 물류 담당자에게 사전 연락 부탁드립니다.\n"
+   +"  - 해상 운송: 월 1~2회 비정기 출발하며, 호주 웨어하우스 입고까지 총 6주(국내통관 1주 + 해운 4주 + 호주통관 1주)가 소요됩니다.\n\n"
+   +"[포장 자재 주의사항]\n\n"
+   +"  - 물류지 도착 후에는 방역이 불가능합니다.\n"
+   +"  - ISPM 인증 도장이 없는 목재 포장재 사용 시 선적이 불가하오니, 반드시 방역 완료 자재(ISPM 인증) 또는 플라스틱 등 비목재 자재로 포장해 주시기 바랍니다.\n\n"
+   +"관련하여 문의 사항이 있으시면 언제든 편하게 연락해 주시기 바랍니다.";
+ }else{
+  subj="[울타리] "+(p.label||code)+" 호주 수출 건 입고 안내 및 준비사항";
+  body="호주 수출 건 입고 안내 및 준비사항 아래와 같이 전달 드립니다.\n\n"
+   +"**첨부파일: 패킹리스트, 카톤라벨, 파레트 라벨 확인하시고 정정 사항 및 소비기한 기재하여 회신 부탁 드립니다.\n"
+   +"카톤/팔레트 라벨은 예시로 두 품목만 우선 작성 하였습니다.\n\n"
+   +"[ 선적 입고지 안내 ]\n"
+   +" - 입고일 : "+fd(leg.in_date||leg.etd)+"\n"
+   +" - 입고시간 : "+(leg.in_time||"오전 9시 ~ 오후 3시 (12~13시 점심 입고불가)")+"\n"
+   +" - 입고지 : "+(leg.wh_addr||"")+" "+(leg.wh_name||"")+"\n"
+   +" - 냉동 담당자: "+(leg.wh_person||"")+" ("+(leg.wh_tel||"")+")\n\n"
+   +"[ 발송 대상 품목 및 수량 ]\n\n"+lines+upcNote+"\n\n"
+   +"** 창고 입고 시 운송기사님께 \"패킹리스트\"를 지참할 수 있도록 전달해 주십시오. (미지참시 입고 불가)\n"
+   +"** 혹은 패킹리스트 상에 기사님/차량 정보 기재하여 상기 담당자 앞으로 팩스 전송 부탁 드립니다.\n\n"
+   +"★☆★ 호주 수출 건은 나무팔레트 사용 금지!! 입니다. 반드시 플라스틱 팔레트로 작업해 주세요.\n\n"
+   +"[ 카톤라벨 작성 안내 ]\n"
+   +"첨부파일 양식에 내용 기재 후 회신 부탁 드립니다.\n"
+   +"  - 카톤라벨 사이즈는 A4 1/2 (A4 사이즈의 반)로 출력하셔서 부착해 주십시오. (외박스 사이즈가 작으면 최소 손바닥 크기로 가독성에 문제 없도록 조정해 주세요.)\n"
+   +"  - 작성한 후 필요한 박스수량 만큼 출력하시면 됩니다.\n"
+   +"  - 1박스에 두 장 부착해 주십시오. (앞면+뒷면 또는 앞면+측면)\n"
+   +"  - 1팔레트에 2개 상품 이상 적재 시 상품별로 카톤라벨 색상을 다르게 출력하셔서 부착해 주십시오.\n"
+   +"    ① 음영 색깔을 달리해서 출력 (단, 칼라 프린터가 있어야 함)\n"
+   +"    ② 칼라프린터가 없을 경우 인쇄용지 색깔을 달리해서 출력\n"
+   +"    ③ 칼라프린터가 없을 경우 테이프를 다른 색깔로 테이핑 처리\n\n"
+   +"[ 입고 전 필수 확인 사항 ]\n\n"
+   +"① 제품명 (국/영문) 일치화 : \"발주서 = 영문라벨 = 카톤라벨 = 팔레트라벨 = 제품 패키지\"\n"
+   +"② 라벨 관련 사항은 작성 시 문의사항 있으면 사전에 메일 주시고, 부착·작업 후 사진은 상품 출고 전에 이메일로 전달\n"
+   +"    (영문라벨, 카톤라벨, 팔레트라벨 부착 사진, 팔레트 적재완료된 사진)\n"
+   +"③ 팔레트 작업 시 주의 사항\n"
+   +"    ** 수출용 팔레트를 사용해 주세요.\n"
+   +"    ** 팔레트 최대 허용 사이즈 (1.1 X 1.1 X 2.2[H]) 이내로 작업. 높이는 팔레트 포함 높이입니다. (작업하신 후 작업사진 보내주세요.)\n"
+   +"    ** 카톤이 약하거나 중량이 무거운 제품의 경우 하중으로 팔레트 1단이 무너질 수 있으니 랩핑 강화 및 지지대 사용으로 무너짐을 방지해 주세요.\n"
+   +"    ** 한 팔레트에 여러 품목을 혼적하실 경우, 팔레트·색상라벨·테이프 등으로 구분하여 선적해 주세요.\n"
+   +"        1안) 품목별 팔레트 2개로 작업하시어 구분\n"
+   +"        2안) 품목별 카톤 구분 표시 : 색상라벨지 또는 색상테이프 또는 카톤라벨 색상\n"
+   +"④ 팔레트라벨 [첨부 - 팔레트 라벨 양식] 에 작성\n\n"
+   +"관련하여 문의 사항이 있으시면 언제든 편하게 연락해 주시기 바랍니다.";
+ }
+ $("#mlSubj").value=subj;
+ $("#mlBody").value=body;
+ const s=plSum(list);
+ $("#mlInfo").innerHTML='<div style="font-weight:700;font-size:12.5px;margin-bottom:8px">'+E(p.label||code)+' · '+st+'</div>'
+  +'<div style="line-height:1.9;color:#374151">'
+  +'품목 '+list.length+'건<br>팔레트 '+s.plt+' PLT<br>수량 '+s.units.toLocaleString()+' EA<br>중량 '+s.kg.toLocaleString()+' kg<br>공급금액 '+KRW(s.krw)+'</div>'
+  +'<div style="margin-top:10px;padding-top:10px;border-top:1px solid #E5E7EB;line-height:1.85;color:#6B7280">'
+  +'ETD '+(leg.etd||"—")+'<br>ETA '+(leg.eta||"—")+'<br>'+(leg.wh_name||"입고지 미설정")+'<br>'+(leg.wh_person||"")+'</div>';
+ msg("#mlMsg","본문을 생성했습니다.");
+}
+if($("#mlPlan")) $("#mlPlan").onchange=function(){ mlSups(); };
+if($("#mlMake")) $("#mlMake").onclick=function(){ mlBuild(); };
+if($("#mlCopy")) $("#mlCopy").onclick=function(){
+ const t=$("#mlBody"); if(!t||!t.value){ msg("#mlMsg","먼저 본문을 생성하세요.",1); return; }
+ try{ navigator.clipboard.writeText(t.value); msg("#mlMsg","본문을 복사했습니다."); }
+ catch(e){ t.select(); document.execCommand("copy"); msg("#mlMsg","본문을 복사했습니다."); }
+};
+if($("#mlMail")) $("#mlMail").onclick=function(){
+ const s=$("#mlSubj").value||"", b=$("#mlBody").value||"";
+ if(!b){ msg("#mlMsg","먼저 본문을 생성하세요.",1); return; }
+ window.location.href="mailto:?subject="+encodeURIComponent(s)+"&body="+encodeURIComponent(b);
 };
 
 /* ===== 선적확정 ===== */
