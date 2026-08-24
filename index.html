@@ -3249,8 +3249,8 @@ function drawShip(){
    +'<td style="padding:4px 6px;border:1px solid #E5E7EB">'+inp("note",R.leg.note,"100%","특이사항")+'</td></tr>';
   html+='<tr class="shsub" data-k="'+key+'"><td colspan="17" style="padding:0;border:1px solid #E5E7EB;background:#F9FAFB">'
    +'<table style="width:100%;border-collapse:collapse;font-size:11.5px">'
-   +'<tr>'+["No","공급사 (Supplier)","제품","박스입수","박스(CTN)","팔레트수","수량(EA)","단가","견적금액_KRW"].map(function(t,i){
-     return '<th style="background:#DBEAFE;color:#1E3A5F;padding:6px 9px;text-align:'+(i>=3?"right":"left")+';border:1px solid #BFDBFE">'+t+'</th>';}).join("")+'</tr>';
+   +'<tr>'+["No","공급사 (Supplier)","제품","바코드","박스입수","박스(CTN)","팔레트수","수량(EA)","단가","견적금액_KRW"].map(function(t,i){
+     return '<th style="background:#DBEAFE;color:#1E3A5F;padding:6px 9px;text-align:'+(i>=4?"right":"left")+';border:1px solid #BFDBFE">'+t+'</th>';}).join("")+'</tr>';
   let n=0;
   Object.keys(by).sort().forEach(function(bn){
    const arr=by[bn], ss=plSum(arr);
@@ -3262,7 +3262,8 @@ function drawShip(){
     html+='<tr style="background:'+(hit?"#fff":"#F3F4F6")+';opacity:'+(hit?1:.45)+'">'
      +'<td style="padding:5px 9px;border:1px solid #E5E7EB">'+n+'</td>'
      +'<td style="padding:5px 9px;border:1px solid #E5E7EB;font-weight:'+(j===0?"600":"400")+';color:'+(j===0?"#111827":"#D1D5DB")+'">'+(j===0?E(bn):"〃")+'</td>'
-     +'<td style="padding:5px 9px;border:1px solid #E5E7EB;color:#374151">'+String(r.no).padStart(2,"0")+' · '+E(x.ko)+'</td>'
+     +'<td style="padding:5px 9px;border:1px solid #E5E7EB;color:#374151">'+E(x.ko)+'</td>'
+     +'<td style="padding:5px 9px;border:1px solid #E5E7EB;color:#6B7280;font-variant-numeric:tabular-nums">'+E(x.ean||"—")+'</td>'
      +'<td style="padding:5px 9px;border:1px solid #E5E7EB;text-align:right">'+(x.upc||"—")+'</td>'
      +'<td style="padding:5px 9px;border:1px solid #E5E7EB;text-align:right">'+(c2!=null?c2.toLocaleString():"—")+'</td>'
      +'<td style="padding:5px 9px;border:1px solid #E5E7EB;text-align:right">'+(r.plt!=null?r.plt:"—")+'</td>'
@@ -3271,7 +3272,7 @@ function drawShip(){
      +'<td style="padding:5px 9px;border:1px solid #E5E7EB;text-align:right;font-weight:600">'+KRW(plAmount(r))+'</td></tr>';
    });
   });
-  html+='<tr style="background:#FEF9C3;font-weight:700"><td colspan="4" style="padding:6px 9px;border:1px solid #E5E7EB;text-align:right">합계</td>'
+  html+='<tr style="background:#FEF9C3;font-weight:700"><td colspan="5" style="padding:6px 9px;border:1px solid #E5E7EB;text-align:right">합계</td>'
    +'<td style="padding:6px 9px;border:1px solid #E5E7EB;text-align:right">'+ctn.toLocaleString()+'</td>'
    +'<td style="padding:6px 9px;border:1px solid #E5E7EB;text-align:right">'+R.s.plt+'</td>'
    +'<td style="padding:6px 9px;border:1px solid #E5E7EB;text-align:right">'+R.s.units.toLocaleString()+'</td>'
