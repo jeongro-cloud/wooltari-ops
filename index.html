@@ -1028,6 +1028,7 @@ const TITLES={dash:["대시보드","전체 품목 현황과 카테고리 분포"
  acct:["회원 관리","가입 승인 · 권한 · 계정 상태 관리"]};
 
 const TABDEF=[["dash","📊 대시보드"],["cat","🗂️ 카테고리"],["brand","🏷️ 브랜드"],["prod","🗄️ 제품 마스터"],["quote","🧮 견적 산출"],["plan","🚢 납품구성"],["ship","📦 선적확정"],["comp","⚖️ 수출 규정"],["rfq","📥 RFQ 양식"],["form","📄 엑셀 양식"],["pmst","🗃️ 상품 마스터"],["marg","📈 납품구성2"],["mail","📧 공급안내"],["sett","💰 출납 처리"],["acct","👤 회원 관리"]];
+const MASTER_ONLY=["prod","pmst","marg","mail","sett","acct"];
 function myTabs(){ if(!ME) return TABDEF.map(t=>t[0]); if(ME.role==="master") return TABDEF.map(t=>t[0]); return (ME.tabs&&ME.tabs.length)?ME.tabs.filter(function(t){return t!=="pmst"&&t!=="sett"&&t!=="mail"&&t!=="marg"}):["dash","cat","brand","quote","plan","comp","rfq","form"]; }
 function canTab(t){ return myTabs().indexOf(t)>=0; }
 function applyTabs(){ const my=myTabs(); $$("#side nav button").forEach(function(b){ b.style.display = my.indexOf(b.dataset.t)>=0 ? "" : "none"; }); }
@@ -1490,7 +1491,7 @@ function openUser(i){
  $("#umRole").value=u.role||"staff";
  {const cs=$("#umCountry"); if(cs) cs.value=u.country||"";}
  {const tw=$("#umTabs"); if(tw){ const cur=(u.tabs&&u.tabs.length)?u.tabs:(u.eff||[]);
-   tw.innerHTML=TABDEF.map(function(t){ return '<label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;margin:0 10px 6px 0"><input type="checkbox" data-tab="'+t[0]+'" '+(cur.indexOf(t[0])>=0?"checked":"")+'>'+t[1]+'</label>'; }).join("")
+   tw.innerHTML=TABDEF.filter(function(t){ return MASTER_ONLY.indexOf(t[0])<0; }).map(function(t){ return '<label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;margin:0 10px 6px 0"><input type="checkbox" data-tab="'+t[0]+'" '+(cur.indexOf(t[0])>=0?"checked":"")+'>'+t[1]+'</label>'; }).join("")
     +'<div style="font-size:11px;color:#9CA3AF;margin-top:2px">모두 해제하면 구분별 기본값을 따릅니다. 마스터는 항상 전체 접근입니다.</div>'; }}
  {const ms=$("#umMt"), bs=$("#umBrand"), bw=$("#umBrandWrap");
   if(ms){ ms.value=u.mt||"buyer";
