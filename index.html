@@ -2826,7 +2826,7 @@ function settBind(){
  try{stExtraBind()}catch(e){}
 }
 async function loadSett(){
- if(!(ME&&ME.role==="master")) return;
+ if(!canTab("sett")) return;
  try{ const r=await api({action:"settlements"}); SETT=r.rows||[]; drawSett(); }
  catch(e){ msg("#stMsg","불러오기 실패 — "+e.message,1); }
 }
@@ -3144,7 +3144,7 @@ function drawDf(){
 function dfBind(){
  document.querySelectorAll("input.dfi").forEach(function(el){
   el.onchange=async function(){
-   if(!(ME&&ME.role==="master")) return;
+   if(!canTab("mail")) return;
    const st=el.dataset.st, f=el.dataset.f;
    let d=(DEFAULTS||[]).find(function(z){return z.storage===st});
    if(!d){ d={storage:st}; DEFAULTS=(DEFAULTS||[]).concat([d]); }
