@@ -2345,7 +2345,7 @@ const DCOL={req:"#6B7280",sea:"#0F766E",mmpa:"#DC2626",liv:"#7C3AED"};
 drawReg();
 
 /* ===== 납품구성 보드 ===== */
-let PLANS=[], PLQ={}, PLDIRTY=false, PLSEL=null, LEGS={}, DEFAULTS=[];
+let PLANS=[], PLQ={}, PLDIRTY=false, PLSEL=null, LEGS={}, DEFAULTS=[], POOLOPEN=false;
 const PLPOOL="__pool", PLST=["냉장","냉동","상온"];
 function plItem(no){ return D.items.find(x=>x.no===no); }
 const STG={"제안":["제품제안","#EFF6FF","#1D4ED8"],"협의":["제품협의","#FEF3C7","#B45309"],"확정":["납품확정","#DCFCE7","#15803D"]};
@@ -2458,11 +2458,12 @@ function plCol(p){
    </div>${stepper(p)}
    <div style="font-size:11px;color:#9CA3AF;margin:-4px 0 8px">${E(p.note||"")}</div>`;
  }else{
-  head = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-    <b style="font-size:14px;color:#111827">대기 목록</b>
+  head = `<div id="poolHead" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none;margin-bottom:${POOLOPEN?"8px":"0"}">
+    <b style="font-size:14px;color:#111827"><span id="poolCar">${POOLOPEN?"▾":"▸"}</span> 대기 목록</b>
     <span style="font-size:12px;color:#6B7280">${s.n}건 · 아직 회차에 없는 제품</span></div>`;
  }
- return `<div class="plcol" style="background:${p?"#fff":"#F9FAFB"};border:1px solid ${locked?"#BBF7D0":"#E5E7EB"};border-radius:12px;padding:14px 16px;margin-bottom:16px">${head}${PLST.map(function(st){return plZone(code,st,rows[st],locked)}).join("")}</div>`;
+ const zones=(!p&&!POOLOPEN)?"":PLST.map(function(st){return plZone(code,st,rows[st],locked)}).join("");
+ return `<div class="plcol" style="background:${p?"#fff":"#F9FAFB"};border:1px solid ${locked?"#BBF7D0":"#E5E7EB"};border-radius:12px;padding:14px 16px;margin-bottom:16px">${head}${zones}</div>`;
 }
 function drawPlan(){
  if(!$("#plBoard")) return;
@@ -2599,6 +2600,7 @@ function plBind(){
    catch(e2){ msg("#plMsg","삭제 실패 — "+e2.message,1); }
   };
  });
+ if($("#poolHead")) $("#poolHead").onclick=function(){ POOLOPEN=!POOLOPEN; drawPlan(); };
  document.querySelectorAll("input.plq").forEach(function(el){
   el.onmousedown=function(e){ e.stopPropagation(); };
   el.onclick=function(e){ e.stopPropagation(); };
