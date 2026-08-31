@@ -2458,8 +2458,8 @@ function plCol(p){
     <span style="color:#9CA3AF;font-size:12px;flex:none">${open?"▾":"▸"}</span>
     <div style="flex:none;min-width:150px">${title}</div>
     <span style="flex:none;font-size:11px;padding:3px 10px;border-radius:99px;background:${STG[p.status||"제안"][1]};color:${STG[p.status||"제안"][2]};white-space:nowrap;font-weight:600">${STG[p.status||"제안"][0]}</span>
-    <span style="flex:none;font-size:11px;color:#6B7280;white-space:nowrap;min-width:78px">${E(stList)}</span>
-    <span style="flex:none;font-size:11px;color:#9CA3AF;white-space:nowrap;min-width:150px">${p.confirm_date?E(p.confirm_date)+" 확정":(ld.etd?"ETD "+E(ld.etd):"")}</span>
+    <span style="flex:none;font-size:11px;padding:3px 9px;border-radius:99px;white-space:nowrap;min-width:44px;text-align:center;background:${stList.indexOf("냉동")>=0?"#EFF6FF":(stList.indexOf("냉장")>=0?"#F0FDFA":"#FFFBEB")};color:${stList.indexOf("냉동")>=0?"#1D4ED8":(stList.indexOf("냉장")>=0?"#0F766E":"#B45309")}">${E(stList)}</span>
+    <span style="flex:none;font-size:11px;color:#9CA3AF;white-space:nowrap;min-width:140px">${p.confirm_date?E(p.confirm_date)+" 확정":(ld.etd?"ETD "+E(ld.etd):"")}</span>
     ${(isMaster()&&p.status!=="확정")?`<button type="button" class="pldel" data-code="${p.code}" title="회차 삭제" style="flex:none;width:24px;height:24px;border-radius:6px;border:1px solid #FECACA;background:#fff;color:#DC2626;font-size:12px;cursor:pointer">🗑</button>`:""}
     <div style="flex:1"></div>
     <div style="display:flex;align-items:center;gap:16px;font-size:11.5px;color:#9CA3AF;white-space:nowrap;flex:none">
@@ -3311,7 +3311,7 @@ function drawShip(){
    return '<input class="shleg" data-code="'+R.p.code+'" data-st="'+R.st+'" data-f="'+f+'" value="'+E(v||"")+'" placeholder="'+ph+'" '+(isMaster()?"":"readonly")+' style="width:'+w2+';padding:2px 5px;font-size:11.5px;border:1px solid transparent;background:transparent;border-radius:4px" onfocus="this.style.borderColor=\'#E5E7EB\';this.style.background=\'#fff\'" onblur="this.style.borderColor=\'transparent\';this.style.background=\'transparent\'">';
   };
   html+='<tr class="shrow" data-k="'+key+'" style="cursor:pointer;background:#fff;border-bottom:1px solid #E5E7EB">'
-   +'<td style="padding:7px 9px;font-weight:700;color:#111827;white-space:nowrap;border:1px solid #E5E7EB"><span class="shcar" data-k="'+key+'">▾</span> '+E(R.p.code)+'-'+E(R.st)+'</td>'
+   +'<td style="padding:7px 9px;font-weight:700;color:#111827;white-space:nowrap;border:1px solid #E5E7EB"><span class="shcar" data-k="'+key+'">▸</span> '+E(R.p.code)+'-'+E(R.st)+'</td>'
    +'<td style="padding:7px 9px;border:1px solid #E5E7EB"><span style="font-size:11px;padding:2px 8px;border-radius:99px;background:'+STG[R.p.status||"제안"][1]+';color:'+STG[R.p.status||"제안"][2]+'">'+STG[R.p.status||"제안"][0]+'</span></td>'+'<td style="padding:7px 9px;border:1px solid #E5E7EB"><span style="font-size:11px;padding:2px 8px;border-radius:99px;background:'+w[1]+';color:'+w[2]+'">'+w[0]+'</span></td>'
    +'<td style="padding:4px 6px;border:1px solid #E5E7EB">'+inp("forwarder",R.leg.forwarder,"110px","포워더")+'</td>'
    +'<td style="padding:4px 6px;border:1px solid #E5E7EB">'+inp("cntr_no",R.leg.cntr_no,"120px","컨테이너 No.")+'</td>'
@@ -3327,7 +3327,7 @@ function drawShip(){
    +'<td style="padding:7px 9px;text-align:right;font-weight:700;color:#111827;white-space:nowrap;border:1px solid #E5E7EB">'+KRW(R.s.krw)+'</td>'
    +'<td style="padding:4px 6px;white-space:nowrap;border:1px solid #E5E7EB"><button class="shdoc" data-k="'+key+'" data-d="PI" style="padding:3px 8px;font-size:11px;border:1px solid #B45309;background:#fff;color:#B45309;border-radius:5px;cursor:pointer;margin-right:3px">PI</button><button class="shdoc" data-k="'+key+'" data-d="PL" style="padding:3px 8px;font-size:11px;border:1px solid #0F766E;background:#fff;color:#0F766E;border-radius:5px;cursor:pointer">PL</button></td>'
    +'<td style="padding:4px 6px;border:1px solid #E5E7EB">'+inp("note",R.leg.note,"100%","특이사항")+'</td></tr>';
-  html+='<tr class="shsub" data-k="'+key+'"><td colspan="17" style="padding:0;border:1px solid #E5E7EB;background:#F9FAFB">'
+  html+='<tr class="shsub" data-k="'+key+'" style="display:none"><td colspan="17" style="padding:0;border:1px solid #E5E7EB;background:#F9FAFB">'
    +'<table style="width:100%;border-collapse:collapse;font-size:11.5px">'
    +'<tr>'+["No","공급사 (Supplier)","제품","바코드","박스입수","박스(CTN)","팔레트수","수량(EA)","단가","견적금액_KRW"].map(function(t,i){
      return '<th style="background:#DBEAFE;color:#1E3A5F;padding:6px 9px;text-align:'+(i>=4?"right":"left")+';border:1px solid #BFDBFE">'+t+'</th>';}).join("")+'</tr>';
