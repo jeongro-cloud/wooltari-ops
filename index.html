@@ -610,7 +610,7 @@ body.pub #topOut, body.pub #sideOut{display:none!important}
       <span id="npErr" style="font-size:12px;color:#DC2626;align-self:center"></span>
      </div></div>
     <div style="display:flex;gap:12px;align-items:flex-start">
-     <div id="plBoard" style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;align-items:flex-start;flex:1;min-width:0"></div>
+     <div id="plBoard" style="flex:1;min-width:0;padding-bottom:8px"></div>
      <div id="plInfo" style="flex:none;width:390px;border:1px solid #E5E7EB;border-radius:14px;padding:0;background:#fff;max-height:82vh;overflow:auto;position:sticky;top:12px;box-shadow:0 1px 3px rgba(17,24,39,.06)"></div>
     </div>
    </div></div>
@@ -2379,36 +2379,85 @@ function plSum(list){ let krw=0,plt=0,cbm=0,units=0,kg=0;
  return {krw:krw, plt:Math.round(plt*100)/100, cbm:Math.round(cbm*1000)/1000, units:units, kg:Math.round(kg), n:list.length}; }
 function plCard(r,locked,editable,code,st){
  const no=r.no, x=plItem(no); if(!x) return "";
- const img=x.im?`<img src="${x.im}" style="width:32px;height:32px;object-fit:cover;border-radius:6px;flex:none">`:`<div style="width:32px;height:32px;border-radius:6px;background:#F3F4F6;flex:none"></div>`;
- const amt=plAmount(r);
- const inp=function(f,v,w,ph){ return `<input class="plq" data-no="${no}" data-code="${code||""}" data-st="${st||""}" data-f="${f}" value="${v==null?"":v}" placeholder="${ph}" draggable="false" style="width:100%;padding:3px 5px;font-size:11px;text-align:right;border:1px solid #E5E7EB;border-radius:5px;background:#fff;color:#374151">`; };
- const body = editable
-  ? `<div style="display:grid;grid-template-columns:auto 1fr auto 1fr;gap:4px 6px;align-items:center;margin-top:6px;font-size:10px;color:#9CA3AF"><span title="팔레트 수 — 0.5, 0.7 등 소수 입력 가능">PLT</span>${inp("plt",r.plt,0,"0.5")}<span>수량</span>${inp("ea",r.ea,0,"EA")}<span>단가</span>${inp("unit",r.unit==null?((x.pkrw||"")):r.unit,0,"원/EA")}<span>합계</span>${inp("amt",r.amt==null?(amt||""):r.amt,0,"원")}</div><div style="text-align:right;font-size:12px;font-weight:700;color:#B45309;margin-top:5px">${KRW(amt)}</div>`
-  : `<div style="font-size:11px;color:#6B7280;margin-top:2px">${r.plt!=null?`${r.plt} PLT · ${(r.ea||0).toLocaleString()} EA @ ${KRW(plUnit(r))} = <b style="color:#374151">${KRW(amt)}</b>`:`${E(BNM(x)||"")} · ${E(x.sub||"")}`}</div>`;
- return `<div class="plcard" ${locked?"":'draggable="true"'} data-no="${no}" style="background:#fff;border:1px solid ${PLSEL===no?"#B45309":"#E5E7EB"};border-radius:8px;padding:7px;margin-bottom:6px;cursor:${locked?"pointer":"grab"}"><div style="display:flex;gap:8px;align-items:center">${img}<div style="min-width:0;flex:1"><div style="font-size:12px;font-weight:600;color:#111827;line-height:1.35;word-break:keep-all">${String(no).padStart(2,"0")} · ${E(x.ko)}</div><div style="font-size:10.5px;color:#9CA3AF;margin-top:1px">${E(BNM(x)||"")} · ${x.pkrw?KRW(x.pkrw)+"/EA":"단가없음"}</div></div>${editable?`<button type="button" class="plout" data-no="${no}" title="대기 목록으로 빼기" style="flex:none;width:22px;height:22px;border-radius:6px;border:1px solid #E5E7EB;background:#fff;color:#9CA3AF;font-size:13px;line-height:1;cursor:pointer">×</button>`:""}</div>${body}</div>`;
-}
-function plPool(){
- const used=new Set(); Object.keys(PLQ).forEach(k=>PLQ[k].forEach(r=>used.add(r.no)));
- const q=($("#plSearch").value||"").trim().toLowerCase(); const c=$("#plCat").value||"";
- return D.items.filter(x=>!used.has(x.no)).filter(x=>!c||x.c1===c).filter(x=>!q||(x.ko+" "+(x.en||"")+" "+(BNM(x)||"")).toLowerCase().indexOf(q)>=0).map(x=>({no:x.no}));
+ const img=x.im?`<img src="${x.im}" style="width:34px;height:34px;object-fit:cover;border-radius:5px">`:`<div style="width:34px;height:34px;border-radius:5px;background:#F3F4F6"></div>`;
+ const amt=plAmount(r), unit=plUnit(r);
+ const box=(x.upc&&r.ea)?Math.round(r.ea/x.upc):null;
+ const td='padding:5px 7px;border:1px solid #E5E7EB;font-size:11.5px';
+ const inp=function(f,v,ph){
+  return `<input class="plq" data-no="${no}" data-code="${code||""}" data-st="${st||""}" data-f="${f}" value="${v==null?"":v}" placeholder="${ph}" draggable="false" style="width:100%;padding:3px 5px;font-size:11.5px;text-align:right;border:1px solid #E5E7EB;border-radius:4px;background:#fff">`;
+ };
+ const sel=(PLSEL===no);
+ return `<tr class="plcard" ${locked?"":'draggable="true"'} data-no="${no}" style="background:${sel?"#FFFBEB":"#fff"};cursor:${locked?"pointer":"grab"}">
+  <td style="${td};text-align:center;width:44px">${img}</td>
+  <td style="${td}"><div style="font-weight:600;color:#111827;line-height:1.35">${E(x.ko)}</div>
+   <div style="font-size:10.5px;color:#9CA3AF;margin-top:1px">${E(BNM(x)||"")}${x.wt?" · "+E(x.wt):""}</div></td>
+  <td style="${td};color:#6B7280;font-variant-numeric:tabular-nums;width:110px">${E(x.ean||"—")}</td>
+  <td style="${td};text-align:right;width:64px">${x.upc||"—"}</td>
+  <td style="${td};text-align:right;width:70px">${box!=null?box.toLocaleString():"—"}</td>
+  <td style="${td};width:72px">${editable?inp("plt",r.plt,"0"):`<div style="text-align:right">${r.plt!=null?r.plt:"—"}</div>`}</td>
+  <td style="${td};width:86px">${editable?inp("ea",r.ea,"0"):`<div style="text-align:right">${(r.ea||0).toLocaleString()}</div>`}</td>
+  <td style="${td};width:86px">${editable?inp("unit",r.unit==null?(x.pkrw||""):r.unit,"원"):`<div style="text-align:right">${unit.toLocaleString()}</div>`}</td>
+  <td style="${td};text-align:right;width:104px;font-weight:700;color:#B45309">${amt.toLocaleString()}</td>
+  <td style="${td};text-align:center;width:36px">${editable?`<button type="button" class="plout" data-no="${no}" title="대기 목록으로" style="width:22px;height:22px;border-radius:5px;border:1px solid #E5E7EB;background:#fff;color:#9CA3AF;font-size:12px;line-height:1;cursor:pointer">×</button>`:""}</td>
+ </tr>`;
 }
 function plZone(code,st,rows,locked){
  const s=plSum(rows);
  const tone = st==="냉동" ? "#EFF6FF" : (st==="냉장" ? "#F0FDFA" : "#FFFBEB");
+ const tcol = st==="냉동" ? "#1D4ED8" : (st==="냉장" ? "#0F766E" : "#B45309");
  const ico  = st==="냉동" ? "❄️" : (st==="냉장" ? "🧊" : "☀️");
- return `<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:11px;color:#6B7280;background:${tone};padding:4px 8px;border-radius:6px;margin-bottom:5px"><b style="color:#374151">${ico} ${st}</b><span>${s.n}건 · ${s.plt} PLT · ${s.kg.toLocaleString()} kg · ${KRW(s.krw)}</span></div>${code!==PLPOOL?`<div style="display:grid;grid-template-columns:auto 1fr auto 1fr;gap:4px 6px;align-items:center;font-size:10px;color:#9CA3AF;margin:0 0 7px;padding:7px;background:#fff;border:1px solid #F3F4F6;border-radius:7px"><span>ETD</span><input class="pleg" data-code="${code}" data-st="${st}" data-f="etd" type="date" value="${plLeg(code,st).etd||''}" ${isMaster()?"":"readonly"} style="width:100%;padding:3px 4px;font-size:10.5px;border:1px solid #E5E7EB;border-radius:5px"><span>ETA</span><input class="pleg" data-code="${code}" data-st="${st}" data-f="eta" type="date" value="${plLeg(code,st).eta||''}" ${isMaster()?"":"readonly"} style="width:100%;padding:3px 4px;font-size:10.5px;border:1px solid #E5E7EB;border-radius:5px"><span>컨테이너</span><input class="pleg" data-code="${code}" data-st="${st}" data-f="container" value="${E(plLeg(code,st).container||'')}" placeholder="20ft / 40HQ" ${isMaster()?"":"readonly"} style="width:100%;padding:3px 4px;font-size:10.5px;border:1px solid #E5E7EB;border-radius:5px"><span>POD</span><input class="pleg" data-code="${code}" data-st="${st}" data-f="pod" value="${E(plLeg(code,st).pod||'')}" placeholder="SYDNEY, AU" ${isMaster()?"":"readonly"} style="width:100%;padding:3px 4px;font-size:10.5px;border:1px solid #E5E7EB;border-radius:5px"></div>`:""}<div class="pldrop" data-code="${code}" data-st="${st}" style="min-height:44px">${rows.map(function(r){return plCard(r,locked,code!==PLPOOL&&!locked&&isMaster(),code,st)}).join("")}</div></div>`;
+ const editable = code!==PLPOOL && !locked && isMaster();
+ if(code!==PLPOOL && !rows.length) return "";
+ const L=plLeg(code,st);
+ const legInp=function(f,v,ph,type){
+  return `<input class="pleg" data-code="${code}" data-st="${st}" data-f="${f}" ${type?'type="'+type+'"':''} value="${E(v||"")}" placeholder="${ph}" ${isMaster()?"":"readonly"} style="padding:3px 6px;font-size:11px;border:1px solid #E5E7EB;border-radius:5px;min-width:110px">`;
+ };
+ const legBar = code!==PLPOOL
+  ? `<div style="display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;padding:7px 10px;background:#fff;border:1px solid #F3F4F6;border-radius:7px;margin-bottom:6px;font-size:10.5px;color:#9CA3AF">
+      <span>ETD</span>${legInp("etd",L.etd,"","date")}
+      <span>ETA</span>${legInp("eta",L.eta,"","date")}
+      <span>컨테이너</span>${legInp("container",L.container,"20ft / 40HQ")}
+      <span>POD</span>${legInp("pod",L.pod,"SYDNEY, AU")}</div>`
+  : "";
+ const TH=["","제품","바코드","입수","박스","PLT","수량","단가","금액",""];
+ const th='background:#F3F4F6;color:#374151;padding:5px 7px;border:1px solid #E5E7EB;font-size:10.5px;font-weight:700;white-space:nowrap';
+ const head=TH.map(function(t,i){return `<th style="${th};text-align:${i>=3&&i<=8?"right":"left"}">${t}</th>`}).join("");
+ const body=rows.map(function(r){return plCard(r,locked,editable,code,st)}).join("")
+   || `<tr><td colspan="10" style="padding:14px;text-align:center;color:#D1D5DB;font-size:11.5px;border:1px solid #E5E7EB">여기로 끌어놓으세요</td></tr>`;
+ return `<div style="margin-bottom:12px">
+   <div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;background:${tone};padding:5px 10px;border-radius:6px;margin-bottom:6px">
+    <b style="color:${tcol}">${ico} ${st}</b>
+    <span style="color:#6B7280">${s.n}건 · ${s.plt} PLT · ${s.kg.toLocaleString()} kg · <b style="color:#111827">${KRW(s.krw)}</b></span></div>
+   ${legBar}
+   <div class="pldrop" data-code="${code}" data-st="${st}">
+    <table style="width:100%;border-collapse:collapse"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>
+   </div></div>`;
 }
 function plCol(p){
  const locked = p && p.status==="확정";
  const code = p?p.code:PLPOOL;
  let rows={};
  PLST.forEach(function(st){ rows[st] = p ? plList(code,st) : plPool().filter(function(r){return plStorage(plItem(r.no))===st}); });
- const all=rows["냉동"].concat(rows["상온"]);
+ const all=PLST.reduce(function(acc,st){return acc.concat(rows[st])},[]);
  const s=plSum(all);
- const head = p
-  ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">${isMaster()?`<input class="plmeta" data-code="${p.code}" data-f="label" value="${E(p.label||"")}" title="회차 제목 — 바꾸면 바로 저장됩니다" style="flex:1;min-width:0;font-size:13px;font-weight:700;color:#111827;border:1px solid transparent;background:transparent;border-radius:6px;padding:2px 4px" onfocus="this.style.borderColor='#E5E7EB';this.style.background='#fff'" onblur="this.style.borderColor='transparent';this.style.background='transparent'">`:`<b style="font-size:13px;color:#111827">${E(p.label)}</b>`}<span style="display:flex;gap:5px;align-items:center"><span style="font-size:11px;padding:2px 8px;border-radius:99px;background:${STG[p.status||"제안"][1]};color:${STG[p.status||"제안"][2]}">${STG[p.status||"제안"][0]}</span>${(isMaster()&&p.status!=="확정")?`<button type="button" class="pldel" data-code="${p.code}" title="회차 삭제" style="width:22px;height:22px;border-radius:6px;border:1px solid #FECACA;background:#fff;color:#DC2626;font-size:12px;line-height:1;cursor:pointer">🗑</button>`:""}</span></div>${stepper(p)}<div style="font-size:11px;color:#9CA3AF;margin-bottom:6px">${E(p.note||"")}</div><div style="font-size:12px;color:#111827;font-weight:600;margin-bottom:2px">${KRW(s.krw)}</div><div style="font-size:11px;color:#6B7280;margin-bottom:8px">${s.n}건 · ${s.plt} PLT · ${s.units.toLocaleString()} EA · ${s.kg.toLocaleString()} kg · CBM ${s.cbm}</div>`
-  : `<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px"><b style="font-size:13px;color:#111827">대기 목록</b><span style="font-size:12px;color:#6B7280">${s.n}건</span></div><div style="font-size:11px;color:#9CA3AF;margin-bottom:8px">아직 어느 회차에도 없는 제품</div>`;
- return `<div class="plcol" style="flex:none;width:360px;background:${p?"#fff":"#F9FAFB"};border:1px solid ${locked?"#BBF7D0":"#E5E7EB"};border-radius:10px;padding:10px">${head}${PLST.map(function(st){return plZone(code,st,rows[st],locked)}).join("")}</div>`;
+ let head;
+ if(p){
+  const title = isMaster()
+   ? `<input class="plmeta" data-code="${p.code}" data-f="label" value="${E(p.label||"")}" style="font-size:14px;font-weight:700;color:#111827;border:1px solid transparent;background:transparent;border-radius:6px;padding:2px 5px;min-width:200px" onfocus="this.style.borderColor='#E5E7EB';this.style.background='#fff'" onblur="this.style.borderColor='transparent';this.style.background='transparent'">`
+   : `<b style="font-size:14px">${E(p.label||p.code)}</b>`;
+  head = `<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+    <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:260px">${title}
+     <span style="font-size:11px;padding:2px 9px;border-radius:99px;background:${STG[p.status||"제안"][1]};color:${STG[p.status||"제안"][2]};white-space:nowrap">${STG[p.status||"제안"][0]}</span>
+     ${(isMaster()&&p.status!=="확정")?`<button type="button" class="pldel" data-code="${p.code}" title="회차 삭제" style="width:24px;height:24px;border-radius:6px;border:1px solid #FECACA;background:#fff;color:#DC2626;font-size:12px;cursor:pointer">🗑</button>`:""}</div>
+    <div style="font-size:12px;color:#6B7280;white-space:nowrap">${s.n}건 · ${s.plt} PLT · ${s.units.toLocaleString()} EA · ${s.kg.toLocaleString()} kg · CBM ${s.cbm} · <b style="color:#111827;font-size:13px">${KRW(s.krw)}</b></div>
+   </div>${stepper(p)}
+   <div style="font-size:11px;color:#9CA3AF;margin:-4px 0 8px">${E(p.note||"")}</div>`;
+ }else{
+  head = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <b style="font-size:14px;color:#111827">대기 목록</b>
+    <span style="font-size:12px;color:#6B7280">${s.n}건 · 아직 회차에 없는 제품</span></div>`;
+ }
+ return `<div class="plcol" style="background:${p?"#fff":"#F9FAFB"};border:1px solid ${locked?"#BBF7D0":"#E5E7EB"};border-radius:12px;padding:14px 16px;margin-bottom:16px">${head}${PLST.map(function(st){return plZone(code,st,rows[st],locked)}).join("")}</div>`;
 }
 function drawPlan(){
  if(!$("#plBoard")) return;
