@@ -2382,7 +2382,7 @@ function plCard(r,locked,editable,code,st){
  const img=x.im?`<img src="${x.im}" style="width:38px;height:38px;object-fit:cover;border-radius:6px;display:block">`:`<div style="width:38px;height:38px;border-radius:6px;background:#F3F4F6"></div>`;
  const amt=plAmount(r), unit=plUnit(r);
  const box=(x.upc&&r.ea)?Math.round(r.ea/x.upc):null;
- const td='padding:7px 9px;border-bottom:1px solid #F3F4F6;font-size:12px';
+ const td='padding:6px 9px;border:1px solid #E5E7EB;font-size:11.5px';
  const inp=function(f,v,ph){
   return `<input class="plq" data-no="${no}" data-code="${code||""}" data-st="${st||""}" data-f="${f}" value="${v==null?"":v}" placeholder="${ph}" draggable="false" style="width:100%;padding:4px 6px;font-size:12px;text-align:right;border:1px solid #E5E7EB;border-radius:5px;background:#fff">`;
  };
@@ -2418,20 +2418,20 @@ function plZone(code,st,rows,locked){
   return `<input class="pleg" data-code="${code}" data-st="${st}" data-f="${f}" ${type?'type="'+type+'"':''} value="${E(v||"")}" placeholder="${ph}" ${isMaster()?"":"readonly"} style="padding:4px 7px;font-size:11.5px;border:1px solid #E5E7EB;border-radius:6px;width:132px">`;
  };
  const legBar = code!==PLPOOL
-  ? `<div style="display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:8px 12px;background:#FAFAFA;border-bottom:1px solid #F3F4F6;font-size:11px;color:#9CA3AF">
+  ? `<div style="display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:8px 12px;background:#FAFAFA;border:1px solid #E5E7EB;border-bottom:0;font-size:11px;color:#9CA3AF">
       <span>ETD</span>${legInp("etd",L.etd,"","date")}
       <span>ETA</span>${legInp("eta",L.eta,"","date")}
       <span>컨테이너</span>${legInp("container",L.container,"20ft / 40HQ")}
       <span>POD</span>${legInp("pod",L.pod,"SYDNEY, AU")}</div>`
   : "";
  const TH=[["",44],["제품",0],["바코드",118],["입수",56],["박스",62],["PLT",64],["수량",78],["단가",82],["금액",102],["",34]];
- const th='background:#F9FAFB;color:#6B7280;padding:7px 9px;border-bottom:1px solid #E5E7EB;font-size:10.5px;font-weight:600;white-space:nowrap;letter-spacing:.02em';
+ const th='background:#1F2937;color:#fff;padding:8px 9px;border:1px solid #374151;font-size:11.5px;font-weight:600;white-space:nowrap';
  const head=TH.map(function(t,i){
    return `<th style="${th};text-align:${i>=3&&i<=8?"right":"left"}"${t[1]?' width="'+t[1]+'"':''}>${t[0]}</th>`;}).join("");
  const body=rows.map(function(r){return plCard(r,locked,editable,code,st)}).join("")
-   || `<tr><td colspan="10" style="padding:18px;text-align:center;color:#D1D5DB;font-size:12px">여기로 끌어놓으세요</td></tr>`;
- return `<div style="border:1px solid #E5E7EB;border-radius:10px;overflow:hidden;margin-bottom:10px">
-   <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;background:${tone};padding:8px 12px">
+   || `<tr><td colspan="10" style="padding:18px;text-align:center;color:#D1D5DB;font-size:12px;border:1px solid #E5E7EB">여기로 끌어놓으세요</td></tr>`;
+ return `<div style="margin-bottom:12px">
+   <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;background:${tone};padding:7px 11px;border:1px solid #E5E7EB;border-bottom:0;border-radius:8px 8px 0 0">
     <b style="color:${tcol};font-size:12.5px">${ico} ${st}</b>
     <span style="color:#6B7280">${s.n}건 · ${s.plt} PLT · ${s.kg.toLocaleString()} kg · <b style="color:#111827">${KRW(s.krw)}</b></span></div>
    ${legBar}
@@ -2452,7 +2452,7 @@ function plCol(p){
   const title = isMaster()
    ? `<input class="plmeta" data-code="${p.code}" data-f="label" value="${E(p.label||"")}" onclick="event.stopPropagation()" style="font-size:14.5px;font-weight:700;color:#111827;border:1px solid transparent;background:transparent;border-radius:6px;padding:3px 6px;width:190px" onfocus="this.style.borderColor='#E5E7EB';this.style.background='#fff'" onblur="this.style.borderColor='transparent';this.style.background='transparent'">`
    : `<b style="font-size:14.5px">${E(p.label||p.code)}</b>`;
-  head = `<div class="plhead" data-code="${p.code}" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;cursor:pointer;user-select:none;padding:${open?"0 0 10px":"4px 0"}">
+  head = `<div class="plhead" data-code="${p.code}" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;cursor:pointer;user-select:none;padding-bottom:${open?"10px":"0"}">
     <div style="display:flex;align-items:center;gap:8px;min-width:0">
      <span style="color:#9CA3AF;font-size:12px">${open?"▾":"▸"}</span>${title}
      <span style="font-size:11px;padding:3px 10px;border-radius:99px;background:${STG[p.status||"제안"][1]};color:${STG[p.status||"제안"][2]};white-space:nowrap;font-weight:600">${STG[p.status||"제안"][0]}</span>
@@ -2463,14 +2463,14 @@ function plCol(p){
      <b style="color:#B45309;font-size:14px">${KRW(s.krw)}</b></div>
    </div>`;
  }else{
-  head = `<div id="poolHead" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none;padding:${open?"0 0 10px":"4px 0"}">
+  head = `<div id="poolHead" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none;padding-bottom:${open?"10px":"0"}">
     <b style="font-size:14px;color:#111827"><span style="color:#9CA3AF;font-size:12px">${open?"▾":"▸"}</span> 대기 목록</b>
     <span style="font-size:11.5px;color:#9CA3AF">${s.n}건 · 아직 회차에 없는 제품</span></div>`;
  }
  const stg = (p&&open) ? `<div style="margin-bottom:10px">${stepper(p)}</div>` : "";
  const note = (p&&open&&p.note) ? `<div style="font-size:11px;color:#9CA3AF;margin:-4px 0 10px">${E(p.note)}</div>` : "";
  const zones = open ? PLST.map(function(st){return plZone(code,st,rows[st],locked)}).join("") : "";
- return `<div class="plcol" style="background:#fff;border:1px solid ${locked?"#BBF7D0":"#E5E7EB"};border-radius:12px;padding:${open?"14px 16px":"10px 16px"};margin-bottom:12px;box-shadow:0 1px 2px rgba(17,24,39,.04)">${head}${stg}${note}${zones}</div>`;
+ return `<div class="plcol" style="background:#fff;border:1px solid ${locked?"#BBF7D0":"#E5E7EB"};border-radius:12px;padding:14px 16px;margin-bottom:12px;box-shadow:0 1px 2px rgba(17,24,39,.04)">${head}${stg}${note}${zones}</div>`;
 }
 function drawPlan(){
  if(!$("#plBoard")) return;
