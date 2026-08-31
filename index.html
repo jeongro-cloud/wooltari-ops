@@ -1028,11 +1028,11 @@ const TITLES={dash:["대시보드","전체 품목 현황과 카테고리 분포"
  acct:["회원 관리","가입 승인 · 권한 · 계정 상태 관리"]};
 
 const TABDEF=[["dash","📊 대시보드"],["cat","🗂️ 카테고리"],["brand","🏷️ 브랜드"],["prod","🗄️ 제품 마스터"],["quote","🧮 견적 산출"],["plan","🚢 납품구성"],["ship","📦 선적확정"],["comp","⚖️ 수출 규정"],["rfq","📥 RFQ 양식"],["form","📄 엑셀 양식"],["pmst","🗃️ 상품 마스터"],["marg","📈 납품구성2"],["mail","📧 공급안내"],["sett","💰 출납 처리"],["acct","👤 회원 관리"]];
-const MASTER_ONLY=["prod","pmst","marg","mail","sett","acct"];
-function myTabs(){ if(!ME) return TABDEF.map(t=>t[0]); if(ME.role==="master") return TABDEF.map(t=>t[0]); return (ME.tabs&&ME.tabs.length)?ME.tabs.filter(function(t){return t!=="pmst"&&t!=="sett"&&t!=="mail"&&t!=="marg"}):["dash","cat","brand","quote","plan","comp","rfq","form"]; }
+const MASTER_ONLY=["acct"];
+function myTabs(){ if(!ME) return TABDEF.map(t=>t[0]); if(ME.role==="master") return TABDEF.map(t=>t[0]); return (ME.tabs&&ME.tabs.length)?ME.tabs.filter(function(t){return t!=="acct"}):["dash","cat","brand","quote","plan","comp","rfq","form"]; }
 function canTab(t){ return myTabs().indexOf(t)>=0; }
 function applyTabs(){ const my=myTabs(); $$("#side nav button").forEach(function(b){ b.style.display = my.indexOf(b.dataset.t)>=0 ? "" : "none"; }); }
-function go(t){ if(!canTab(t)) t=myTabs()[0]||"dash"; if((t==="prod"||t==="pmst"||t==="sett"||t==="mail"||t==="marg") && !(ME&&ME.role==="master")) t="dash"; setTimeout(relang,80);
+function go(t){ if(!canTab(t)) t=myTabs()[0]||"dash"; if(t==="acct" && !(ME&&ME.role==="master")) t="dash"; setTimeout(relang,80);
  $$("#side nav button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
  $$("main section").forEach(s=>s.classList.toggle("on",s.id===t));
  let TT=TITLES[t]||[t,""];
