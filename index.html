@@ -647,7 +647,7 @@ body.pub #topOut, body.pub #sideOut{display:none!important}
 
  <section id="pmst"><div class="wrap">
   <div class="kpis" id="pmKpi"></div>
-  <div class="panel"><h3>상품 마스터 관리 <span style="font-size:11px;padding:2px 9px;border-radius:99px;background:#FEE2E2;color:#DC2626;margin-left:6px">관리자 전용</span></h3>
+  <div class="panel"><h3>상품 마스터 관리<span class="mo-badge" style="display:none;font-size:11px;padding:2px 9px;border-radius:99px;background:#FEE2E2;color:#DC2626;margin-left:6px">관리자 전용</span></h3>
    <p class="hint">PRODUCT MASTER 시트와 같은 구성입니다. 값을 클릭해 고치면 바로 저장됩니다.</p>
    <div class="bd">
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
@@ -663,7 +663,7 @@ body.pub #topOut, body.pub #sideOut{display:none!important}
 
  <section id="sett"><div class="wrap">
   <div class="kpis" id="stKpi"></div>
-  <div class="panel"><h3>출납 처리 <span style="font-size:11px;padding:2px 9px;border-radius:99px;background:#FEE2E2;color:#DC2626;margin-left:6px">관리자 전용</span></h3>
+  <div class="panel"><h3>출납 처리<span class="mo-badge" style="display:none;font-size:11px;padding:2px 9px;border-radius:99px;background:#FEE2E2;color:#DC2626;margin-left:6px">관리자 전용</span></h3>
    <p class="hint">계산서 발행(수금)과 대금지급(지출)을 회차별로 관리합니다. 값을 클릭해 고치면 바로 저장됩니다.</p>
    <div class="bd">
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
@@ -678,7 +678,7 @@ body.pub #topOut, body.pub #sideOut{display:none!important}
  </div></section>
 
  <section id="mail"><div class="wrap">
-  <div class="panel"><h3>공급안내 메일 <span style="font-size:11px;padding:2px 9px;border-radius:99px;background:#FEE2E2;color:#DC2626;margin-left:6px">관리자 전용</span></h3>
+  <div class="panel"><h3>공급안내 메일<span class="mo-badge" style="display:none;font-size:11px;padding:2px 9px;border-radius:99px;background:#FEE2E2;color:#DC2626;margin-left:6px">관리자 전용</span></h3>
    <p class="hint">회차와 보관을 고르면 품목·수량·입고지가 자동으로 채워집니다. 본문은 직접 고쳐 쓸 수 있습니다.</p>
    <div class="bd">
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
@@ -703,7 +703,7 @@ body.pub #topOut, body.pub #sideOut{display:none!important}
 
  <section id="marg"><div class="wrap">
   <div class="kpis" id="mgKpi"></div>
-  <div class="panel"><h3>납품구성2 · 내부용 <span style="font-size:11px;padding:2px 9px;border-radius:99px;background:#FEE2E2;color:#DC2626;margin-left:6px">관리자 전용</span></h3>
+  <div class="panel"><h3>납품구성2 · 내부용<span class="mo-badge" style="display:none;font-size:11px;padding:2px 9px;border-radius:99px;background:#FEE2E2;color:#DC2626;margin-left:6px">관리자 전용</span></h3>
    <p class="hint">공급가(바이어 청구) 대비 제조사 매입가를 비교해 마진을 봅니다. 매입가를 고치면 마진이 즉시 다시 계산되고 저장됩니다. 기본 마진율은 냉동·냉장 15%, 상온 12%입니다.</p>
    <div class="bd">
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
@@ -1037,7 +1037,8 @@ const TABDEF=[["dash","📊 대시보드"],["cat","🗂️ 카테고리"],["bran
 const MASTER_ONLY=["acct"];
 function myTabs(){ if(!ME) return TABDEF.map(t=>t[0]); if(ME.role==="master") return TABDEF.map(t=>t[0]); return (ME.tabs&&ME.tabs.length)?ME.tabs.filter(function(t){return t!=="acct"}):["dash","cat","brand","quote","plan","comp","rfq","form"]; }
 function canTab(t){ return myTabs().indexOf(t)>=0; }
-function applyTabs(){ const my=myTabs(); $$("#side nav button").forEach(function(b){ b.style.display = my.indexOf(b.dataset.t)>=0 ? "" : "none"; }); }
+function applyTabs(){ const my=myTabs(); $$("#side nav button").forEach(function(b){ b.style.display = my.indexOf(b.dataset.t)>=0 ? "" : "none"; });
+ try{ document.querySelectorAll(".mo-badge").forEach(function(b){ b.style.display = isMaster() ? "" : "none"; }); }catch(_){} }
 function go(t){ if(!canTab(t)) t=myTabs()[0]||"dash"; if(t==="acct" && !(ME&&ME.role==="master")) t="dash"; setTimeout(relang,80);
  $$("#side nav button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
  $$("main section").forEach(s=>s.classList.toggle("on",s.id===t));
@@ -2363,7 +2364,7 @@ function stepper(p){
  const cur=STGS.indexOf(p.status||"제안");
  const cells=STGS.map(function(s,i){
   const on=i<=cur, c=STG[s];
-  return '<button type="button" data-stg="'+p.code+'|'+s+'" '+(isMaster()?"":"disabled")+' style="flex:1;padding:5px 2px;font-size:11px;font-weight:600;cursor:'+(isMaster()?"pointer":"default")+';border:1px solid '+(on?c[2]:"#E5E7EB")+';background:'+(on?c[1]:"#fff")+';color:'+(on?c[2]:"#9CA3AF")+';border-radius:'+(i===0?"7px 0 0 7px":(i===2?"0 7px 7px 0":"0"))+'">'+c[0]+'</button>';
+  return '<button type="button" data-stg="'+p.code+'|'+s+'" '+(canTab("plan")?"":"disabled")+' style="flex:1;padding:5px 2px;font-size:11px;font-weight:600;cursor:'+(canTab("plan")?"pointer":"default")+';border:1px solid '+(on?c[2]:"#E5E7EB")+';background:'+(on?c[1]:"#fff")+';color:'+(on?c[2]:"#9CA3AF")+';border-radius:'+(i===0?"7px 0 0 7px":(i===2?"0 7px 7px 0":"0"))+'">'+c[0]+'</button>';
  }).join("");
  return '<div style="display:flex;margin-bottom:8px">'+cells+'</div>';
 }
@@ -2420,11 +2421,11 @@ function plZone(code,st,rows,locked){
  const tone = st==="냉동" ? "#EFF6FF" : (st==="냉장" ? "#F0FDFA" : "#FFFBEB");
  const tcol = st==="냉동" ? "#1D4ED8" : (st==="냉장" ? "#0F766E" : "#B45309");
  const ico  = st==="냉동" ? "❄️" : (st==="냉장" ? "🧊" : "☀️");
- const editable = code!==PLPOOL && !locked && isMaster();
+ const editable = code!==PLPOOL && !locked && canTab("plan");
  if(code!==PLPOOL && !rows.length) return "";
  const L=plLeg(code,st);
  const legInp=function(f,v,ph,type){
-  return `<input class="pleg" data-code="${code}" data-st="${st}" data-f="${f}" ${type?'type="'+type+'"':''} value="${E(v||"")}" placeholder="${ph}" ${isMaster()?"":"readonly"} style="padding:4px 7px;font-size:11.5px;border:1px solid #E5E7EB;border-radius:6px;width:132px">`;
+  return `<input class="pleg" data-code="${code}" data-st="${st}" data-f="${f}" ${type?'type="'+type+'"':''} value="${E(v||"")}" placeholder="${ph}" ${canTab("plan")?"":"readonly"} style="padding:4px 7px;font-size:11.5px;border:1px solid #E5E7EB;border-radius:6px;width:132px">`;
  };
  const legBar = code!==PLPOOL
   ? `<div style="display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:8px 12px;background:#FAFAFA;border:1px solid #E5E7EB;border-bottom:0;font-size:11px;color:#9CA3AF">
@@ -2458,7 +2459,7 @@ function plCol(p){
  const s=plSum(all);
  let head;
  if(p){
-  const title = isMaster()
+  const title = canTab("plan")
    ? `<input class="plmeta" data-code="${p.code}" data-f="label" value="${E(p.label||"")}" onclick="event.stopPropagation()" style="font-size:14.5px;font-weight:700;color:#111827;border:1px solid transparent;background:transparent;border-radius:6px;padding:3px 6px;width:190px" onfocus="this.style.borderColor='#E5E7EB';this.style.background='#fff'" onblur="this.style.borderColor='transparent';this.style.background='transparent'">`
    : `<b style="font-size:14.5px">${E(p.label||p.code)}</b>`;
   const stList=PLST.filter(function(z){return rows[z].length}).join(" · ")||"—";
@@ -2469,7 +2470,7 @@ function plCol(p){
     <span style="flex:none;font-size:11px;padding:3px 10px;border-radius:99px;background:${STG[p.status||"제안"][1]};color:${STG[p.status||"제안"][2]};white-space:nowrap;font-weight:600">${STG[p.status||"제안"][0]}</span>
     <span style="flex:none;font-size:11px;padding:3px 9px;border-radius:99px;white-space:nowrap;min-width:44px;text-align:center;background:${stList.indexOf("냉동")>=0?"#EFF6FF":(stList.indexOf("냉장")>=0?"#F0FDFA":"#FFFBEB")};color:${stList.indexOf("냉동")>=0?"#1D4ED8":(stList.indexOf("냉장")>=0?"#0F766E":"#B45309")}">${E(stList)}</span>
     <span style="flex:none;font-size:11px;color:#9CA3AF;white-space:nowrap;min-width:140px">${p.confirm_date?E(p.confirm_date)+" 확정":(ld.etd?"ETD "+E(ld.etd):"")}</span>
-    ${(isMaster()&&p.status!=="확정")?`<button type="button" class="pldel" data-code="${p.code}" title="회차 삭제" style="flex:none;width:24px;height:24px;border-radius:6px;border:1px solid #FECACA;background:#fff;color:#DC2626;font-size:12px;cursor:pointer">🗑</button>`:""}
+    ${(canTab("plan")&&p.status!=="확정")?`<button type="button" class="pldel" data-code="${p.code}" title="회차 삭제" style="flex:none;width:24px;height:24px;border-radius:6px;border:1px solid #FECACA;background:#fff;color:#DC2626;font-size:12px;cursor:pointer">🗑</button>`:""}
     <div style="flex:1"></div>
     <div style="display:flex;align-items:center;gap:16px;font-size:11.5px;color:#9CA3AF;white-space:nowrap;flex:none">
      <span style="min-width:36px;text-align:right">${s.n}건</span>
@@ -2485,7 +2486,7 @@ function plCol(p){
     <span style="font-size:11.5px;color:#9CA3AF">${s.n}건 · 아직 회차에 없는 제품</span></div>`;
  }
  const cd = (p&&open&&p.status==="확정")
-  ? `<div style="display:flex;align-items:center;gap:8px;margin:-4px 0 10px;font-size:11.5px;color:#6B7280"><span>확정일자</span><input class="plmeta" data-code="${p.code}" data-f="confirm_date" type="date" value="${p.confirm_date||""}" ${isMaster()?"":"readonly"} style="padding:4px 8px;font-size:11.5px;border:1px solid #E5E7EB;border-radius:6px"></div>` : "";
+  ? `<div style="display:flex;align-items:center;gap:8px;margin:-4px 0 10px;font-size:11.5px;color:#6B7280"><span>확정일자</span><input class="plmeta" data-code="${p.code}" data-f="confirm_date" type="date" value="${p.confirm_date||""}" ${canTab("plan")?"":"readonly"} style="padding:4px 8px;font-size:11.5px;border:1px solid #E5E7EB;border-radius:6px"></div>` : "";
  const stg = (p&&open) ? `<div style="margin-bottom:10px">${stepper(p)}</div>` : "";
  const note = (p&&open&&p.note) ? `<div style="font-size:11px;color:#9CA3AF;margin:-4px 0 10px">${E(p.note)}</div>` : "";
  const zones = open ? PLST.map(function(st){return plZone(code,st,rows[st],locked)}).join("") : "";
@@ -2548,7 +2549,7 @@ function plDetail(){
   +'<div style="background:#F9FAFB;border-radius:14px 14px 0 0;padding:16px 16px 12px;border-bottom:1px solid #E5E7EB">'
    +(x.im?'<div style="background:#fff;border:1px solid #E5E7EB;border-radius:10px;height:190px;display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:12px"><img src="'+x.im+'" style="max-width:100%;max-height:190px;object-fit:contain"></div>'
         :'<div style="background:#fff;border:1px dashed #E5E7EB;border-radius:10px;height:110px;display:flex;align-items:center;justify-content:center;color:#D1D5DB;font-size:11px;margin-bottom:12px">NO IMAGE</div>')
-   +(isMaster()?'<div id="plDrop" data-no="'+x.no+'" style="border:1px dashed #D6D3D1;border-radius:8px;padding:8px;text-align:center;font-size:11px;color:#9CA3AF;margin-bottom:10px;cursor:pointer;background:#fff">📷 클릭 또는 <b>Ctrl+V</b>로 캡처 사진 붙여넣기 <span id="plImgMsg" style="color:#B45309"></span></div><input id="plFile" type="file" accept="image/*" style="display:none">':'')
+   +(canTab("plan")?'<div id="plDrop" data-no="'+x.no+'" style="border:1px dashed #D6D3D1;border-radius:8px;padding:8px;text-align:center;font-size:11px;color:#9CA3AF;margin-bottom:10px;cursor:pointer;background:#fff">📷 클릭 또는 <b>Ctrl+V</b>로 캡처 사진 붙여넣기 <span id="plImgMsg" style="color:#B45309"></span></div><input id="plFile" type="file" accept="image/*" style="display:none">':'')
   +'<div style="font-size:10.5px;color:#9CA3AF;letter-spacing:.06em;margin-bottom:3px">NO.'+String(x.no).padStart(2,"0")+' · '+E(BNM(x)||"")+'</div>'
    +'<div style="font-size:16px;font-weight:700;color:#111827;line-height:1.35;word-break:keep-all">'+E(x.ko)+'</div>'
    +(x.en?'<div style="font-size:12px;color:#6B7280;margin-top:3px">'+E(x.en)+'</div>':'')
@@ -2656,7 +2657,7 @@ function plBind(){
   el.onmousedown=function(e){ e.stopPropagation(); };
   el.onclick=function(e){ e.stopPropagation(); };
   el.onchange=async function(){
-   if(!isMaster()) return;
+   if(!canTab("plan")) return;
    const code=el.dataset.code, st=el.dataset.st, f=el.dataset.f;
    const k=plKey(code,st); LEGS[k]=LEGS[k]||{plan_code:code,storage:st};
    LEGS[k][f]=el.value||null;
@@ -2669,7 +2670,7 @@ function plBind(){
   el.onmousedown=function(e){ e.stopPropagation(); };
   el.onclick=function(e){ e.stopPropagation(); };
   el.onchange=async function(){
-   if(!isMaster()) return;
+   if(!canTab("plan")) return;
    const code=el.dataset.code, f=el.dataset.f;
    const p=PLANS.find(function(q){return q.code===code}); if(!p) return;
    p[f]=el.value||null;
@@ -2706,7 +2707,7 @@ async function loadPlans(){
   PLDIRTY=false; drawPlan(); try{drawShip()}catch(e){} try{mlOpts();mlSups()}catch(e){} try{drawMarg()}catch(e){} try{drawDf()}catch(e){}
  }catch(e){ msg("#plMsg","불러오기 실패 — "+e.message,1); }
 }
-if($("#plSave")) $("#plSave").onclick=async function(){ if(!isMaster()){ msg("#plMsg","마스터만 저장할 수 있습니다.",1); return; } try{ for(const p of PLANS){ if(p.status==="확정") continue; let rows=[]; PLST.forEach(function(st){ plList(p.code,st).forEach(function(r){ rows.push({row_no:r.no,pos:rows.length,qty_plt:r.plt,qty_units:r.ea,unit_krw:r.unit,amount_krw:r.amt}); }); }); await api({action:"plan_save",code:p.code,rows:rows}); } PLDIRTY=false; msg("#plMsg","저장했습니다. 선적확정에 반영되었습니다."); try{drawShip()}catch(e){} }catch(e){ msg("#plMsg","저장 실패 — "+e.message,1); } };
+if($("#plSave")) $("#plSave").onclick=async function(){ if(!canTab("plan")){ msg("#plMsg","납품구성 권한이 없습니다.",1); return; } try{ for(const p of PLANS){ if(p.status==="확정") continue; let rows=[]; PLST.forEach(function(st){ plList(p.code,st).forEach(function(r){ rows.push({row_no:r.no,pos:rows.length,qty_plt:r.plt,qty_units:r.ea,unit_krw:r.unit,amount_krw:r.amt}); }); }); await api({action:"plan_save",code:p.code,rows:rows}); } PLDIRTY=false; msg("#plMsg","저장했습니다. 선적확정에 반영되었습니다."); try{drawShip()}catch(e){} }catch(e){ msg("#plMsg","저장 실패 — "+e.message,1); } };
 /* ===== 출납 처리 ===== */
 let SETT=[];
 function drawSett(){
@@ -3317,7 +3318,7 @@ function drawShip(){
   const nsup=Object.keys(by).length;
   let ctn=0; R.list.forEach(function(r){ const x=plItem(r.no); if(x&&x.upc&&r.ea) ctn+=Math.round(r.ea/x.upc); });
   const inp=function(f,v,w2,ph){
-   return '<input class="shleg" data-code="'+R.p.code+'" data-st="'+R.st+'" data-f="'+f+'" value="'+E(v||"")+'" placeholder="'+ph+'" '+(isMaster()?"":"readonly")+' style="width:'+w2+';padding:2px 5px;font-size:11.5px;border:1px solid transparent;background:transparent;border-radius:4px" onfocus="this.style.borderColor=\'#E5E7EB\';this.style.background=\'#fff\'" onblur="this.style.borderColor=\'transparent\';this.style.background=\'transparent\'">';
+   return '<input class="shleg" data-code="'+R.p.code+'" data-st="'+R.st+'" data-f="'+f+'" value="'+E(v||"")+'" placeholder="'+ph+'" '+(canTab("ship")?"":"readonly")+' style="width:'+w2+';padding:2px 5px;font-size:11.5px;border:1px solid transparent;background:transparent;border-radius:4px" onfocus="this.style.borderColor=\'#E5E7EB\';this.style.background=\'#fff\'" onblur="this.style.borderColor=\'transparent\';this.style.background=\'transparent\'">';
   };
   html+='<tr class="shrow" data-k="'+key+'" style="cursor:pointer;background:#fff;border-bottom:1px solid #E5E7EB">'
    +'<td style="padding:7px 9px;font-weight:700;color:#111827;white-space:nowrap;border:1px solid #E5E7EB"><span class="shcar" data-k="'+key+'">▸</span> '+E(R.p.code)+'-'+E(R.st)+'</td>'
@@ -3391,7 +3392,7 @@ function shBind(){
  document.querySelectorAll("input.shleg").forEach(function(el){
   el.onclick=function(e){ e.stopPropagation(); };
   el.onchange=async function(){
-   if(!isMaster()) return;
+   if(!canTab("ship")) return;
    const code=el.dataset.code, st=el.dataset.st, f=el.dataset.f;
    const k=plKey(code,st); LEGS[k]=LEGS[k]||{plan_code:code,storage:st};
    LEGS[k][f]=el.value||null;
@@ -3642,7 +3643,7 @@ if($("#docPrint")) $("#docPrint").onclick=shDocPrint;
 
 
 if($("#plNew")) $("#plNew").onclick=function(){ const b=$("#plNewBox"); if(!b) return;
- if(!isMaster()){ msg("#plMsg","마스터만 회차를 만들 수 있습니다.",1); return; }
+ if(!canTab("plan")){ msg("#plMsg","납품구성 권한이 없습니다.",1); return; }
  const show = b.style.display==="none";
  b.style.display = show ? "" : "none";
  if(show){ const c=$("#npCode");
