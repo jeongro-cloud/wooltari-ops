@@ -2401,6 +2401,11 @@ function plCard(r,locked,editable,code,st){
   <td style="${td};text-align:center;width:36px">${editable?`<button type="button" class="plout" data-no="${no}" title="대기 목록으로" style="width:22px;height:22px;border-radius:5px;border:1px solid #E5E7EB;background:#fff;color:#9CA3AF;font-size:12px;line-height:1;cursor:pointer">×</button>`:""}</td>
  </tr>`;
 }
+function plPool(){
+ const used=new Set(); Object.keys(PLQ).forEach(k=>PLQ[k].forEach(r=>used.add(r.no)));
+ const q=($("#plSearch").value||"").trim().toLowerCase(); const c=$("#plCat").value||"";
+ return D.items.filter(x=>!used.has(x.no)).filter(x=>!c||x.c1===c).filter(x=>!q||(x.ko+" "+(x.en||"")+" "+(BNM(x)||"")).toLowerCase().indexOf(q)>=0).map(x=>({no:x.no}));
+}
 function plZone(code,st,rows,locked){
  const s=plSum(rows);
  const tone = st==="냉동" ? "#EFF6FF" : (st==="냉장" ? "#F0FDFA" : "#FFFBEB");
