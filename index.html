@@ -1221,6 +1221,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   ME={id:r.me.username, co:r.me.company, nm:r.me.manager, tel:r.me.tel||"", ml:r.me.email||"",
       role:r.me.role, price:!!r.me.price_view, act:true, uid:r.me.id,
       mt:r.me.member_type||"buyer", brand:r.me.brand||null,
+      tabs:(Array.isArray(r.me.tabs)&&r.me.tabs.length?r.me.tabs:null),
       country:r.me.country||null, lang:r.me.lang||"ko"};
   if(ME.lang && ME.lang!==LANG) setLang(ME.lang);
   if(e) e.textContent="";
@@ -1266,7 +1267,9 @@ async function doLogin(){
    if(keep) localStorage.setItem("wooltari_keep","1"); else localStorage.removeItem("wooltari_keep");
   }catch(_){}
   ME={id:r.me.username, co:r.me.company, nm:r.me.manager, tel:r.me.tel||"", ml:r.me.email||"",
-      role:r.me.role, price:!!r.me.price_view, act:true, uid:r.me.id, mt:r.me.member_type||"buyer", brand:r.me.brand||null};
+      role:r.me.role, price:!!r.me.price_view, act:true, uid:r.me.id, mt:r.me.member_type||"buyer", brand:r.me.brand||null,
+      tabs:(Array.isArray(r.me.tabs)&&r.me.tabs.length?r.me.tabs:null),
+      country:r.me.country||null, lang:r.me.lang||"ko"};
   e.textContent="";
   enterApp();
   try{ const n=await loadProducts();
