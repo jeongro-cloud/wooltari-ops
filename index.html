@@ -1025,7 +1025,13 @@ const TITLES={dash:["대시보드","전체 품목 현황과 카테고리 분포"
  quotePub:["수량·적재 계산","주문 수량으로 총 CBM과 컨테이너 적재율 산출"],
  comp:["수출 규정","선적 전 확인사항과 품목군별 필요 서류"],rfq:["RFQ 양식","제조사 견적 요청 및 마스터 데이터 연동"],
  form:["엑셀 양식","업로드·다운로드용 양식 모음"],
- acct:["회원 관리","가입 승인 · 권한 · 계정 상태 관리"]};
+ acct:["회원 관리","가입 승인 · 권한 · 계정 상태 관리"],
+ plan:["납품구성","회차별 품목 구성과 선적 일정을 관리합니다"],
+ ship:["선적확정","확정 회차를 컨테이너 단위로 조회하고 PI·PL을 발행합니다"],
+ pmst:["상품 마스터","PRODUCT MASTER 원장 — 규격·단가·상태 관리"],
+ marg:["납품구성2","내부용 — 공급가 대비 매입가 마진 분석"],
+ mail:["공급안내","제조사 발송 안내 메일 작성"],
+ sett:["출납 처리","계산서 발행(수금)과 대금지급(지출) 관리"]};
 
 const TABDEF=[["dash","📊 대시보드"],["cat","🗂️ 카테고리"],["brand","🏷️ 브랜드"],["prod","🗄️ 제품 마스터"],["quote","🧮 견적 산출"],["plan","🚢 납품구성"],["ship","📦 선적확정"],["comp","⚖️ 수출 규정"],["rfq","📥 RFQ 양식"],["form","📄 엑셀 양식"],["pmst","🗃️ 상품 마스터"],["marg","📈 납품구성2"],["mail","📧 공급안내"],["sett","💰 출납 처리"],["acct","👤 회원 관리"]];
 const MASTER_ONLY=["acct"];
@@ -2705,7 +2711,7 @@ if($("#plSave")) $("#plSave").onclick=async function(){ if(!isMaster()){ msg("#p
 let SETT=[];
 function drawSett(){
  const rw=$("#stR"), pw=$("#stP"); if(!rw||!pw) return;
- if(!(ME&&ME.role==="master")) return;
+ if(!canTab("sett")) return;
  const sel=$("#stPlan");
  if(sel&&!sel.dataset.on){
   sel.innerHTML='<option value="">전체 회차</option>'+PLANS.map(function(p){return '<option value="'+p.code+'">'+E(p.label||p.code)+'</option>'}).join("");
@@ -2841,7 +2847,7 @@ if($("#stXlsx")) $("#stXlsx").onclick=function(){
 /* ===== 상품 마스터 관리 ===== */
 function drawPM(){
  const tb=$("#pmTbl"); if(!tb) return;
- if(!(ME&&ME.role==="master")) return;
+ if(!canTab("pmst")) return;
  const q=(($("#pmQ")&&$("#pmQ").value)||"").trim().toLowerCase();
  const fst=($("#pmSt")&&$("#pmSt").value)||"";
  const ff=($("#pmF")&&$("#pmF").value)||"";
@@ -2936,7 +2942,7 @@ function mgRate(x){
 }
 function drawMarg(){
  const tb=$("#mgTbl"); if(!tb) return;
- if(!(ME&&ME.role==="master")) return;
+ if(!canTab("marg")) return;
  mgOpts();
  const v=($("#mgPlan")&&$("#mgPlan").value)||"";
  if(!v){ tb.innerHTML='<tr><td style="padding:24px;text-align:center;color:#9CA3AF">회차를 선택하세요.</td></tr>'; return; }
@@ -3118,7 +3124,7 @@ function stExtraBind(){
 /* ===== 기본 입고지 설정 ===== */
 function drawDf(){
  const box=$("#dfBox"); if(!box) return;
- if(!(ME&&ME.role==="master")) return;
+ if(!canTab("mail")) return;
  const ICO={"냉동":["❄️","#EFF6FF","#1D4ED8"],"냉장":["🧊","#F0FDFA","#0F766E"],"상온":["☀️","#FFFBEB","#B45309"]};
  const F=[["wh_name","물류지명"],["wh_addr","주소"],["wh_person","담당자"],["wh_tel","연락처"],
           ["in_time","입고시간"],["box_mark","박스 기재사항"],["pol","선적항(POL)"],["pod","도착항(POD)"]];
