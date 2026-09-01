@@ -2728,7 +2728,7 @@ function drawSett(){
   const tot=rows.reduce(function(a,x){return a+(+x.amount_krw||0)},0);
   const done=rows.filter(function(x){return statusOpts[0]===x.status}).length;
   const CO=[["NO",42],["분류코드",112],["상호명",150],["품명",170],
-   [kind==="receivable"?"계산서발행일자":"제품인도일자",110],["결재조건",106],
+   [kind==="receivable"?"계산서발행일자":"제품인도일자",110],[kind==="receivable"?"입금일":"지급일",106],
    ["담당자",96],["연락처",120],["이메일",180],["발행금액",118],
    [kind==="receivable"?"발행여부":"지급여부",92],[kind==="payable"?"발주(PO)":"",kind==="payable"?150:1],["",40]];
   let o='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
@@ -2835,7 +2835,7 @@ if($("#stPlan")) $("#stPlan").onchange=function(){drawSett()};
 if($("#stQ"))    $("#stQ").oninput=function(){drawSett()};
 if($("#stXlsx")) $("#stXlsx").onclick=function(){
  try{
-  const A=[["구분","분류코드","상호명","품명","일자","결재조건","담당자","연락처","이메일","금액(KRW)","처리여부"]];
+  const A=[["구분","분류코드","상호명","품명","일자","입금일/지급일","담당자","연락처","이메일","금액(KRW)","처리여부"]];
   (SETT||[]).forEach(function(x){ A.push([(x.kind==="receivable"?"계산서발행(수금)":"대금지급(지출)"),x.plan_code||"",x.company||"",x.item_name||"",x.due_date||"",x.terms||"",x.manager||"",x.tel||"",x.email||"",(x.amount_krw==null?"":+x.amount_krw),x.status||""]); });
   const wb=XLSX.utils.book_new(), ws=XLSX.utils.aoa_to_sheet(A);
   ws["!cols"]=[{wch:18},{wch:14},{wch:20},{wch:26},{wch:12},{wch:14},{wch:14},{wch:16},{wch:26},{wch:15},{wch:10}];
@@ -3095,7 +3095,7 @@ function stPoDoc(id){
   +'<table style="width:100%;margin-top:26px;font-size:12px"><tr>'
   +'<td style="width:50%">발주자<br><b>WOOLTARI KOREA</b><br><br><br>(인)</td>'
   +'<td>수주자<br><b>'+E(x.company||"")+'</b><br><br><br>(인)</td></tr></table></div>';
- window.__DOC={po:x};
+ window.__DOC={po:x, D:null, kind:"PO"};
  $("#docTitle").textContent='발주서 '+(x.po_no||"")+' — '+(x.company||"");
  $("#docBody").innerHTML=o;
  $("#docBk").style.display=""; $("#docW").style.display="";
@@ -3547,6 +3547,8 @@ function shDoc(key,kind){
 function shDocClose(){ $("#docBk").style.display="none"; $("#docW").style.display="none"; }
 function shDocXlsx(){
  const o=window.__DOC; if(!o) return;
+ if(o.po){ poXlsx(o.po); return; }
+ if(!o.D){ msg("#shMsg","내려받을 내용이 없습니다.",1); return; }
  const D=o.D, kind=o.kind, L=D.leg;
  const ref="WTREXP-"+kind+"-"+D.code.replace("PI-WTR","26")+"-"+D.st;
  const today=new Date().toISOString().slice(0,10);
@@ -3623,6 +3625,43 @@ function shDocXlsx(){
   XLSX.writeFile(wb,kind+"-"+D.code+"-"+D.st+".xlsx");
   msg("#shMsg",kind+" 파일을 내려받았습니다.");
  }catch(e){ msg("#shMsg",kind+" 생성 실패 — "+e.message,1); }
+}
+function poXlsx(x){
+ try{
+  const today=new Date().toISOString().slice(0,10);
+  const A=[];
+  A.push(["발 주 서 (Purchase Order)"]); A.push([]);
+  A.push(["발주번호",x.po_no||"","","발주일자",x.po_date||today]);
+  A.push(["공급자",x.company||"","","담당자",(x.manager||"")+" "+(x.tel||"")]);
+  A.push(["발주처","WOOLTARI KOREA CO.,LTD","","회차",x.plan_code||""]);
+  A.push(["납품일자",x.due_date||"","","결제조건",x.terms||""]);
+  A.push([]);
+  A.push(["보관","연번","제품명","박스","수량(EA)","매입단가","금액"]);
+  const code=x.plan_code||"", comp=(x.company||"").trim();
+  let tB=0,tE=0,tA=0;
+  PLST.forEach(function(st){
+   plList(code,st).forEach(function(r){
+    const p=plItem(r.no); if(!p) return;
+    if((p.sup||BNM(p)||"").trim()!==comp) return;
+    const unit=plUnit(r), rate=(typeof mgRate==="function"?mgRate(p):0.15);
+    const buy=p.buy||Math.round(unit*(1-rate));
+    const ea=r.ea||0, box=(p.upc&&ea)?Math.round(ea/p.upc):null;
+    const amt=buy*ea; tB+=(box||0); tE+=ea; tA+=amt;
+    A.push([st,r.no,p.ko,box,ea,buy,amt]);
+   });
+  });
+  A.push(["","","합계",tB,tE,"",tA]);
+  A.push([]);
+  A.push(["· 상기와 같이 발주하오니 납기일에 맞추어 납품하여 주시기 바랍니다."]);
+  A.push(["· 납품 시 패킹리스트를 반드시 지참해 주시기 바랍니다."]);
+  A.push(["· 호주 수출 건으로 나무팔레트 사용은 불가하며, 플라스틱 팔레트로 작업해 주십시오."]);
+  A.push([]); A.push(["발주자","WOOLTARI KOREA","","수주자",x.company||""]);
+  const wb=XLSX.utils.book_new(), ws=XLSX.utils.aoa_to_sheet(A);
+  ws["!cols"]=[{wch:8},{wch:6},{wch:44},{wch:10},{wch:12},{wch:12},{wch:14}];
+  XLSX.utils.book_append_sheet(wb,ws,"PO");
+  XLSX.writeFile(wb,(x.po_no||"PO")+"_"+(x.company||"")+".xlsx");
+  msg("#stMsg","발주서를 내려받았습니다.");
+ }catch(e){ msg("#stMsg","발주서 엑셀 실패 — "+e.message,1); }
 }
 function shDocPrint(){
  const b=$("#docBody"); if(!b) return;
