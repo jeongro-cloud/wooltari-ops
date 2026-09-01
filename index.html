@@ -2861,7 +2861,7 @@ function drawPM(){
  if(ff==="nophoto") L=L.filter(function(x){return !x.im});
  const CO=[["연번","no",46,0],["카테고리","cat",92,0],["보관","st",56,0],["공급사","sup",108,1],
   ["SKU","sku",92,1],["바코드","ean",118,1],["제품명(KOR)","ko",250,1],["제품명(Eng)","en",210,1],
-  ["구입가","buy",84,2],["입수/박스","upc",68,2],["CS/PLT","cpp2",64,2],["팔렛수량","upp",76,2],
+  ["구입가","buy",84,2],["마진율%","mpct",72,2],["입수/박스","upc",68,2],["CS/PLT","cpp2",64,2],["팔렛수량","upp",76,2],
   ["공급단가","pkrw",88,2],["팔렛단가","pltp",104,2],["1차협의가","nego",84,2],["GAP","gap",64,2],
   ["상태","mstat",150,1],["소비기한","shelf",76,1]];
  let html='<thead><tr>'+CO.map(function(c){
@@ -2875,9 +2875,11 @@ function drawPM(){
    let v=x[f];
    if(f==="no") v=String(x.no).padStart(2,"0");
    if(f==="cat") v=(x.cat||"");
+   if(f==="mpct") v=(x.buy&&x.pkrw)?Math.round((x.pkrw-x.buy)/x.pkrw*1000)/10:"";
    const cell='padding:4px 6px;border:1px solid #E5E7EB;text-align:'+(num?"right":"left");
    if(!ed){ html+='<td style="'+cell+';color:#6B7280;white-space:nowrap">'+E(String(v==null?"":v))+'</td>'; return; }
-   html+='<td style="'+cell+';padding:2px 3px"><input class="pmi" data-no="'+x.no+'" data-f="'+f+'" value="'+E(String(v==null?"":v))+'" style="width:100%;padding:3px 5px;font-size:11.5px;text-align:'+(num?"right":"left")+';border:1px solid transparent;background:transparent;border-radius:4px" onfocus="this.style.borderColor=\'#E5E7EB\';this.style.background=\'#fff\'" onblur="this.style.borderColor=\'transparent\';this.style.background=\'transparent\'"></td>';
+   const isM=(f==="mpct");
+   html+='<td style="'+cell+';padding:2px 3px'+(isM?";background:#FFFBEB":"")+'"><input class="pmi" data-no="'+x.no+'" data-f="'+f+'" value="'+E(String(v==null?"":v))+'" style="width:100%;padding:3px 5px;font-size:11.5px;text-align:'+(num?"right":"left")+';border:1px solid '+(isM?"#FDE68A":"transparent")+';background:'+(isM?"#fff":"transparent")+';border-radius:4px'+(isM?";font-weight:700;color:#B45309":"")+'" onfocus="this.style.borderColor=\'#E5E7EB\';this.style.background=\'#fff\'" onblur="this.style.borderColor=\'transparent\';this.style.background=\'transparent\'"></td>';
   });
   html+='</tr>';
  });
@@ -2898,16 +2900,42 @@ function pmBind(){
     buy:"purchase_krw",upc:"units_per_case",cpp2:"cases_per_pallet",upp:"units_per_pallet",
     pkrw:"supply_krw",pltp:"pallet_price_krw",nego:"nego_krw",gap:"gap_krw",
     mstat:"master_status",shelf:"shelf_life"};
-   const col=MAP[f]; if(!col) return;
-   const NUM=["buy","upc","cpp2","upp","pkrw","pltp","nego","gap"];
+   const NUM=["buy","mpct","upc","cpp2","upp","pkrw","pltp","nego","gap"];
    let v=el.value.trim();
    if(NUM.indexOf(f)>=0){ const r=v.replace(/[^0-9.\-]/g,""); v = r===""?null:parseFloat(r); }
    else if(v==="") v=null;
+
+   if(f==="mpct"){
+    if(v==null || !x.buy){ msg("#pmMsg","구입가가 있어야 마진율을 적용합니다.",1); drawPM(); return; }
+    if(v>=100){ msg("#pmMsg","마진율은 100% 미만이어야 합니다.",1); drawPM(); return; }
+    x.pkrw = Math.round(x.buy/(1-v/100));
+    x.mrate = Math.round((x.pkrw-x.buy)/x.pkrw*10000)/10000;
+    if(x.upp) x.pltp = x.pkrw*x.upp;
+    try{
+     await api({action:"product_update",id:x.id,changes:{
+      supply_krw:x.pkrw, margin_rate:x.mrate,
+      pallet_price_krw:(x.upp?x.pltp:null)}});
+     msg("#pmMsg","#"+no+" 마진 "+v+"% → 공급단가 "+x.pkrw.toLocaleString()+"원");
+    }catch(e){ msg("#pmMsg","저장 실패 — "+e.message,1); }
+    drawPM(); return;
+   }
+
+   const col=MAP[f]; if(!col) return;
    x[f]=v;
    const ch={}; ch[col]=v;
+
+   if(f==="buy" || f==="pkrw"){
+    if(x.buy && x.pkrw){ x.mrate=Math.round((x.pkrw-x.buy)/x.pkrw*10000)/10000; ch.margin_rate=x.mrate; }
+   }
+   if(f==="pkrw" || f==="upp"){
+    if(x.pkrw && x.upp){ x.pltp=x.pkrw*x.upp; ch.pallet_price_krw=x.pltp; }
+   }
    try{ await api({action:"product_update",id:x.id,changes:ch}); msg("#pmMsg","#"+no+" "+col+" 저장");
     if(f==="upc"||f==="cpp2"){ if(x.upc&&x.cpp2){ x.upp=x.upc*x.cpp2;
-      await api({action:"product_update",id:x.id,changes:{units_per_pallet:x.upp}}); } drawPM(); }
+      const c2={units_per_pallet:x.upp};
+      if(x.pkrw){ x.pltp=x.pkrw*x.upp; c2.pallet_price_krw=x.pltp; }
+      await api({action:"product_update",id:x.id,changes:c2}); } drawPM(); }
+    if(f==="buy"||f==="pkrw"||f==="upp") drawPM();
    }catch(e){ msg("#pmMsg","저장 실패 — "+e.message,1); }
   };
  });
