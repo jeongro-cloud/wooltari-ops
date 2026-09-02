@@ -497,6 +497,7 @@ body.pub #topOut, body.pub #sideOut{display:none!important}
    <p class="hint" id="prodHint">카드를 누르면 규격·셀링포인트·필요서류를 봅니다. 카드 왼쪽 위 <b>체크박스</b>로 품목을 고르고
     <b>견적에 담기</b>·<b>선택 제외</b>·<b>선택 견적서 엑셀</b>을 쓸 수 있습니다. 제외한 품목은 목록·견적·엑셀에서 빠집니다.</p>
    <div class="bd">
+    <div id="prodSticky" style="position:sticky;top:0;z-index:30;background:#fff;padding:10px 0 8px;margin:-10px 0 0;box-shadow:0 6px 12px -8px rgba(17,24,39,.18)">
     <div class="bar">
      <select id="fc"><option value="">전체 카테고리</option></select>
      <select id="fs"><option value="">전체 중분류</option></select>
@@ -522,6 +523,7 @@ body.pub #topOut, body.pub #sideOut{display:none!important}
       <input type="file" id="pImg" accept="image/*" multiple hidden></label>
     </div>
     <div id="selP"></div>
+    </div>
     <div class="pgrid" id="pgrid"></div>
     <p class="note" id="pcnt" style="margin-top:12px"></p>
    </div></div>
