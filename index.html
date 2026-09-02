@@ -988,6 +988,7 @@ body.pub #topOut, body.pub #sideOut{display:none!important}
  <div><div class="m" id="dNo"></div><h3 id="dKo"></h3><div class="e" id="dEn"></div></div>
  <div style="display:flex;gap:7px;flex:none">
   <button class="x" id="dEdit" title="정보 수정" style="width:auto;padding:0 11px">✏️ 수정</button>
+  <button class="x" id="dDel" title="제품 삭제" style="width:auto;padding:0 11px;color:#FCA5A5">🗑 삭제</button>
   <button class="x" id="dX" aria-label="닫기">✕</button></div></div>
  <div class="bd" id="dBd"></div></aside>
 
@@ -2248,6 +2249,18 @@ $("#dEdit").onclick=()=>{
  if(!editNo){ openEdit(+$("#dEdit").dataset.no); }
  else { const n=editNo; editNo=null; $("#dEdit").textContent="✏️ 수정"; open_(n); }
 };
+if($("#dDel")) $("#dDel").onclick=async ()=>{
+ const no=+$("#dEdit").dataset.no;
+ const x=D.items.find(i=>i.no===no); if(!x) return;
+ if(!confirm("["+no+"] "+(x.ko||"")+"\n\n이 제품을 삭제할까요?\n되돌릴 수 없습니다.")) return;
+ try{
+  const r=await api({action:"product_delete",id:x.id});
+  D.items = D.items.filter(i=>i.no!==no);
+  close_();
+  refreshAll();
+  alert(r.message||"삭제했습니다.");
+ }catch(e){ alert("삭제 실패 — "+e.message); }
+};
 /* ---- 일괄 수정 ---- */
 function openBulk(){
  if(!sel.size) return alert("선택된 품목이 없습니다.");
@@ -2863,7 +2876,7 @@ function drawPM(){
   ["SKU","sku",92,1],["바코드","ean",118,1],["제품명(KOR)","ko",250,1],["제품명(Eng)","en",210,1],
   ["구입가","buy",84,2],["마진율%","mpct",72,2],["입수/박스","upc",68,2],["CS/PLT","cpp2",64,2],["팔렛수량","upp",76,2],
   ["공급단가","pkrw",88,2],["팔렛단가","pltp",104,2],["1차협의가","nego",84,2],["GAP","gap",64,2],
-  ["상태","mstat",150,1],["소비기한","shelf",76,1]];
+  ["상태","mstat",150,1],["소비기한","shelf",76,1],["","del",40,0]];
  let html='<thead><tr>'+CO.map(function(c){
   return '<th style="position:sticky;top:0;background:#1F2937;color:#fff;padding:7px 8px;font-size:11px;font-weight:600;white-space:nowrap;text-align:'+(c[3]===2?"right":"left")+';border:1px solid #374151;min-width:'+c[2]+'px">'+c[0]+'</th>';
  }).join("")+'</tr></thead><tbody>';
@@ -2876,6 +2889,10 @@ function drawPM(){
    if(f==="no") v=String(x.no).padStart(2,"0");
    if(f==="cat") v=(x.cat||"");
    if(f==="mpct") v=(x.buy&&x.pkrw)?Math.round((x.pkrw-x.buy)/x.pkrw*1000)/10:"";
+   if(f==="del"){
+    html+='<td style="'+cell+';text-align:center;padding:2px"><button type="button" class="pmdel" data-id="'+x.id+'" data-no="'+x.no+'" title="제품 삭제" style="width:24px;height:24px;border-radius:6px;border:1px solid #FECACA;background:#fff;color:#DC2626;font-size:12px;cursor:pointer;line-height:1">🗑</button></td>';
+    return;
+   }
    const cell='padding:4px 6px;border:1px solid #E5E7EB;text-align:'+(num?"right":"left");
    if(!ed){ html+='<td style="'+cell+';color:#6B7280;white-space:nowrap">'+E(String(v==null?"":v))+'</td>'; return; }
    const isM=(f==="mpct");
@@ -2892,6 +2909,20 @@ function drawPM(){
  pmBind();
 }
 function pmBind(){
+ document.querySelectorAll("button.pmdel").forEach(function(el){
+  el.onclick=async function(){
+   const id=el.dataset.id, no=el.dataset.no;
+   const x=D.items.find(function(z){return String(z.no)===String(no)});
+   const nm=x?x.ko:("#"+no);
+   if(!confirm("["+no+"] "+nm+"\n\n이 제품을 삭제할까요?\n되돌릴 수 없습니다.")) return;
+   try{
+    const r=await api({action:"product_delete",id:id});
+    msg("#pmMsg", r.message||"삭제했습니다.");
+    D.items = D.items.filter(function(z){return String(z.no)!==String(no)});
+    drawPM();
+   }catch(e){ msg("#pmMsg","삭제 실패 — "+e.message,1); }
+  };
+ });
  document.querySelectorAll("input.pmi").forEach(function(el){
   el.onchange=async function(){
    const no=+el.dataset.no, f=el.dataset.f;
