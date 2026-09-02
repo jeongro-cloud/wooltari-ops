@@ -1061,6 +1061,7 @@ $$("#side nav button").forEach(b=>b.onclick=()=>go(b.dataset.t));
 
 /* ================= 서버 API ================= */
 const API="https://pproifuguyyfqzrybdud.supabase.co/functions/v1/prdom-api";
+console.log("wooltari-ops build 2026-09-02-account-fix");
 let TOKEN=null;
 async function api(body){
  const r=await fetch(API,{method:"POST",
@@ -1435,13 +1436,13 @@ function drawAcct(){
    <button class="btn gh" data-app="${i}" style="padding:4px 9px">승인+금액</button>
    <button class="btn gh" data-rj="${i}" style="padding:4px 9px">거절</button></td></tr>`).join("")
   : `<tr><td colspan="7" style="color:#9CA3AF">승인 대기 중인 신청이 없습니다.</td></tr>`;
- const AP=async(i,pv)=>{ try{ await api({action:"account_approve",id:PEND[i].uid,price_view:pv});
+ const AP=async(i,pv)=>{ try{ await api({action:"account_approve",id:PEND[i].uid,username:PEND[i].id,price_view:pv});
    await refreshAccounts(); msg("#umsg","승인했습니다."); }catch(e){ msg("#umsg",e.message,1);} };
  $$("#ptab [data-ap]").forEach(b=>b.onclick=()=>AP(+b.dataset.ap,false));
  $$("#ptab [data-app]").forEach(b=>b.onclick=()=>AP(+b.dataset.app,true));
  $$("#ptab [data-rj]").forEach(b=>b.onclick=async()=>{
   if(!confirm("가입 신청을 거절하시겠습니까?"))return;
-  try{ await api({action:"account_update",id:PEND[+b.dataset.rj].uid,patch:{status:"rejected"}});
+  try{ await api({action:"account_update",id:PEND[+b.dataset.rj].uid,username:PEND[+b.dataset.rj].id,patch:{status:"rejected"}});
    await refreshAccounts(); }catch(e){ msg("#umsg",e.message,1);} });
  const q=(($("#uq")&&$("#uq").value)||"").trim().toLowerCase();
  const fr=$("#uRole")?$("#uRole").value:"", fp=$("#uPv")?$("#uPv").value:"", fa=$("#uAct")?$("#uAct").value:"";
@@ -1471,7 +1472,7 @@ function drawAcct(){
  $("#ucnt").textContent=`${L.length}명 표시 중 (전체 ${USERS.length}명)`;
  $$("#utab [data-pv]").forEach(cb=>cb.onchange=async()=>{
   const u=USERS[+cb.dataset.pv];
-  try{ await api({action:"account_update",id:u.uid,patch:{price_view:cb.checked}});
+  try{ await api({action:"account_update",id:u.uid,username:u.id,patch:{price_view:cb.checked}});
    u.price=cb.checked;
    if(ME&&u.id===ME.id){ME.price=cb.checked;applyPV();paintUser();
      try{await loadProducts();refreshAll();drawQ();}catch(_){}}
@@ -1481,13 +1482,13 @@ function drawAcct(){
  $$("#utab [data-ed]").forEach(b=>b.onclick=()=>openUser(+b.dataset.ed));
  $$("#utab [data-tg]").forEach(b=>b.onclick=async()=>{
   const u=USERS[+b.dataset.tg], next=(u.act===false)?"approved":"suspended";
-  try{ await api({action:"account_update",id:u.uid,patch:{status:next}});
+  try{ await api({action:"account_update",id:u.uid,username:u.id,patch:{status:next}});
    await refreshAccounts(); msg("#umsg", next==="approved"?"활성화했습니다.":"정지했습니다.");
   }catch(e){ msg("#umsg",e.message,1);} });
  $$("#utab [data-del]").forEach(b=>b.onclick=async()=>{
   const u=USERS[+b.dataset.del];
   if(!confirm(u.co+" · "+u.nm+" 계정을 삭제하시겠습니까?"))return;
-  try{ await api({action:"account_delete",id:u.uid}); await refreshAccounts();
+  try{ await api({action:"account_delete",id:u.uid,username:u.id}); await refreshAccounts();
    msg("#umsg","삭제했습니다."); }catch(e){ msg("#umsg",e.message,1);} });
 }
 {const rb=$("#uReload"); if(rb) rb.onclick=refreshAccounts;}
@@ -1541,7 +1542,7 @@ $("#umYes").onclick=async()=>{
  if(pw) patch.password=pw;
  try{
   if(umIdx===null) await api({action:"account_create",username:id,password:pw,company:co,manager:nm,tel:g("umTel"),email:g("umMl"),role,price_view:patch.price_view,member_type:patch.member_type,brand:patch.brand});
-  else await api({action:"account_update",id:USERS[umIdx].uid,patch});
+  else await api({action:"account_update",id:USERS[umIdx].uid,username:USERS[umIdx].id,patch});
   $("#usermodal").classList.remove("on");
   await refreshAccounts();
   msg("#umsg", umIdx===null?"계정을 추가했습니다.":"저장했습니다.");
