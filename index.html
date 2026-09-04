@@ -2892,13 +2892,13 @@ function drawPM(){
    const f=c[1], num=(c[3]===2), ed=(c[3]>0);
    let v=x[f];
    if(f==="no") v=String(x.no).padStart(2,"0");
+   const cell='padding:4px 6px;border:1px solid #E5E7EB;text-align:'+(num?"right":"left");
    if(f==="cat") v=(x.cat||"");
    if(f==="mpct") v=(x.buy&&x.pkrw)?Math.round((x.pkrw-x.buy)/x.pkrw*1000)/10:"";
    if(f==="del"){
     html+='<td style="'+cell+';text-align:center;padding:2px"><button type="button" class="pmdel" data-id="'+x.id+'" data-no="'+x.no+'" title="제품 삭제" style="width:24px;height:24px;border-radius:6px;border:1px solid #FECACA;background:#fff;color:#DC2626;font-size:12px;cursor:pointer;line-height:1">🗑</button></td>';
     return;
    }
-   const cell='padding:4px 6px;border:1px solid #E5E7EB;text-align:'+(num?"right":"left");
    if(!ed){ html+='<td style="'+cell+';color:#6B7280;white-space:nowrap">'+E(String(v==null?"":v))+'</td>'; return; }
    const isM=(f==="mpct");
    html+='<td style="'+cell+';padding:2px 3px'+(isM?";background:#FFFBEB":"")+'"><input class="pmi" data-no="'+x.no+'" data-f="'+f+'" value="'+E(String(v==null?"":v))+'" style="width:100%;padding:3px 5px;font-size:11.5px;text-align:'+(num?"right":"left")+';border:1px solid '+(isM?"#FDE68A":"transparent")+';background:'+(isM?"#fff":"transparent")+';border-radius:4px'+(isM?";font-weight:700;color:#B45309":"")+'" onfocus="this.style.borderColor=\'#E5E7EB\';this.style.background=\'#fff\'" onblur="this.style.borderColor=\'transparent\';this.style.background=\'transparent\'"></td>';
@@ -4322,7 +4322,7 @@ $("#pmYes").onclick=async()=>{
 function refreshAll(){ try{drawBrand()}catch(e){} setTimeout(relang,80);
  fillBrands(); drawP(); drawQ();
  if(curC) pickCat(curC);
- drawKPI(); try{drawReg()}catch(e){} try{drawPM()}catch(e){} try{loadSett()}catch(e){} try{ if(!PLDIRTY) loadPlans(); else drawPlan(); }catch(e){}
+ drawKPI(); try{drawReg()}catch(e){} try{drawPM()}catch(e){console.error("drawPM",e)} try{loadSett()}catch(e){} try{ if(!PLDIRTY) loadPlans(); else drawPlan(); }catch(e){}
  catCards($("#dcat"),c=>{go("cat");pickCat(c)});
  catCards($("#ccat"),pickCat);
  if(curC) $$("#ccat .cat").forEach(b=>b.classList.toggle("on",b.dataset.c===curC));
