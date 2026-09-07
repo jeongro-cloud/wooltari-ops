@@ -2624,6 +2624,14 @@ function plCol(p){
 }
 function drawPlan(){
  if(!$("#plBoard")) return;
+ const __sy = window.scrollY || document.documentElement.scrollTop || 0;
+ __drawPlanBody();
+ if(Math.abs((window.scrollY||0) - __sy) > 2){
+  window.scrollTo(0, __sy);
+  requestAnimationFrame(function(){ window.scrollTo(0, __sy); });
+ }
+}
+function __drawPlanBody(){
  const cats=D.cats.filter(function(c){return D.items.some(function(x){return x.c1===c.id})});
  if($("#plCat").options.length<2) $("#plCat").innerHTML='<option value="">전체 카테고리</option>'+cats.map(function(c){return `<option value="${c.id}">${c.ic} ${E(c.ko)}</option>`}).join("");
  $("#plBoard").innerHTML=plCol(null)+PLANS.map(function(p){return plCol(p)}).join("");
