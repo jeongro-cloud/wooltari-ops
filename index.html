@@ -2412,6 +2412,16 @@ function plAmount(r){ if(r.amt!=null) return r.amt; return plUnit(r)*(r.ea||0); 
 function plSum(list){ let krw=0,plt=0,cbm=0,units=0,kg=0;
  list.forEach(function(r){ const x=plItem(r.no); if(!x)return; krw+=plAmount(r); plt+=(r.plt||0); units+=(r.ea||0); kg+=plKg(r); if(x.cbm) cbm+=x.cbm*(r.plt||0); });
  return {krw:krw, plt:Math.round(plt*100)/100, cbm:Math.round(cbm*1000)/1000, units:units, kg:Math.round(kg), n:list.length}; }
+function plStBadge(x, editable){
+ const v=x.st||"";
+ const col = v==="냉동" ? ["#DBEAFE","#1D4ED8"] : (v==="냉장" ? ["#CCFBF1","#0F766E"] : (v==="상온" ? ["#FEF3C7","#B45309"] : ["#F3F4F6","#9CA3AF"]));
+ const ic  = v==="냉동" ? "❄️" : (v==="냉장" ? "🧊" : (v==="상온" ? "☀️" : ""));
+ if(!editable) return `<span style="display:inline-block;padding:2px 7px;border-radius:99px;background:${col[0]};color:${col[1]};font-size:10.5px;font-weight:700;white-space:nowrap">${ic} ${v||"—"}</span>`;
+ return `<select class="plstsel" data-no="${x.no}" draggable="false" style="width:100%;padding:3px 4px;font-size:10.5px;font-weight:700;text-align:center;border:1px solid ${col[0]};background:${col[0]};color:${col[1]};border-radius:99px;cursor:pointer">
+   <option value="냉동"${v==="냉동"?" selected":""}>❄️ 냉동</option>
+   <option value="냉장"${v==="냉장"?" selected":""}>🧊 냉장</option>
+   <option value="상온"${v==="상온"?" selected":""}>☀️ 상온</option></select>`;
+}
 function plCard(r,locked,editable,code,st){
  const no=r.no, x=plItem(no); if(!x) return "";
  const img=x.im?`<img src="${x.im}" style="width:38px;height:38px;object-fit:cover;border-radius:6px;display:block">`:`<div style="width:38px;height:38px;border-radius:6px;background:#F3F4F6"></div>`;
@@ -2426,6 +2436,7 @@ function plCard(r,locked,editable,code,st){
   <td style="${td};text-align:center;width:44px">${img}</td>
   <td style="${td}"><div style="font-weight:600;color:#111827;line-height:1.35">${E(x.ko)}</div>
    <div style="font-size:10.5px;color:#9CA3AF;margin-top:1px">${E(BNM(x)||"")}${x.wt?" · "+E(x.wt):""}</div></td>
+  <td style="${td};text-align:center;width:58px">${plStBadge(x, editable)}</td>
   <td style="${td};color:#6B7280;font-variant-numeric:tabular-nums;width:110px">${E(x.ean||"—")}</td>
   <td style="${td};text-align:right;width:64px">${x.upc||"—"}</td>
   <td style="${td};text-align:right;width:70px">${box!=null?box.toLocaleString():"—"}</td>
@@ -2470,12 +2481,12 @@ function plZone(code,st,rows,locked){
       <span>컨테이너</span>${legInp("container",L.container,"20ft / 40HQ")}
       <span>POD</span>${legInp("pod",L.pod,"SYDNEY, AU")}</div>`
   : "";
- const TH=[["",44],["제품",0],["바코드",118],["입수",56],["박스",62],["PLT",64],["수량",78],["단가",82],["금액",102],["",34]];
+ const TH=[["",44],["제품",0],["보관",58],["바코드",118],["입수",56],["박스",62],["PLT",64],["수량",78],["단가",82],["금액",102],["",34]];
  const th='background:#1F2937;color:#fff;padding:8px 9px;border:1px solid #374151;font-size:11.5px;font-weight:600;white-space:nowrap';
  const head=TH.map(function(t,i){
-   return `<th style="${th};text-align:${i>=3&&i<=8?"right":"left"}"${t[1]?' width="'+t[1]+'"':''}>${t[0]}</th>`;}).join("");
+   return `<th style="${th};text-align:${i===2?"center":(i>=4&&i<=9?"right":"left")}"${t[1]?' width="'+t[1]+'"':''}>${t[0]}</th>`;}).join("");
  const body=rows.map(function(r){return plCard(r,locked,editable,code,st)}).join("")
-   || `<tr><td colspan="10" style="padding:18px;text-align:center;color:#D1D5DB;font-size:12px;border:1px solid #E5E7EB">여기로 끌어놓으세요</td></tr>`;
+   || `<tr><td colspan="11" style="padding:18px;text-align:center;color:#D1D5DB;font-size:12px;border:1px solid #E5E7EB">여기로 끌어놓으세요</td></tr>`;
  return `<div style="margin-bottom:12px">
    <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;background:${tone};padding:7px 11px;border:1px solid #E5E7EB;border-bottom:0;border-radius:8px 8px 0 0">
     <b style="color:${tcol};font-size:12.5px">${ico} ${st}</b>
@@ -2668,6 +2679,33 @@ function plBind(){
   el.onclick=function(e){
    if(e.target.tagName==="INPUT"||e.target.tagName==="BUTTON") return;
    const c=el.dataset.code; PLOPEN[c]=!(PLOPEN[c]===true); drawPlan();
+  };
+ });
+ document.querySelectorAll("select.plstsel").forEach(function(el){
+  el.onmousedown=function(e){ e.stopPropagation(); };
+  el.onclick=function(e){ e.stopPropagation(); };
+  el.onchange=async function(e){
+   e.stopPropagation();
+   const no=+el.dataset.no, v=el.value;
+   const x=plItem(no); if(!x) return;
+   const old=x.st;
+   if(old===v) return;
+   if(!confirm("["+no+"] "+x.ko+"\n\n보관을 "+(old||"—")+" → "+v+" 로 바꿀까요?\n\n제품 마스터가 함께 바뀌고,\n회차 안에서도 "+v+" 구역으로 이동합니다.")){ drawPlan(); return; }
+   try{
+    await api({action:"product_update",id:x.id,changes:{storage:v}});
+    x.st=v;
+    const fd=plFind(no);
+    if(fd){
+     const from=plKey(fd.code,fd.st), to=plKey(fd.code,v);
+     PLQ[from]=(PLQ[from]||[]).filter(function(z){return z.no!==no});
+     PLQ[to]=PLQ[to]||[]; PLQ[to].push(fd.row);
+     PLDIRTY=true;
+     msg("#plMsg","#"+no+" 보관을 "+v+"로 바꿨습니다. 저장을 눌러 회차에 반영하세요.");
+    } else {
+     msg("#plMsg","#"+no+" 보관을 "+v+"로 바꿨습니다.");
+    }
+    drawPlan();
+   }catch(err){ msg("#plMsg","보관 변경 실패 — "+err.message,1); drawPlan(); }
   };
  });
  document.querySelectorAll("input.plq").forEach(function(el){
