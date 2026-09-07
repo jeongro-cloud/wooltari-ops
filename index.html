@@ -1750,7 +1750,7 @@ function pcard(x){
   ${ex?'<span class="exbadge">제외</span>':""}
   <div class="ph" data-open="${x.no}">${x.im?`<img src="${x.im}" alt="${E(x.ko)}" loading="lazy">`:'<span class="tbc mono" style="font-size:10px">NO IMAGE</span>'}</div>
   <div class="tx" data-open="${x.no}"><div class="meta">${String(x.no).padStart(2,"0")} · ${E(BNM(x))}${x.isNew?' · <span style="color:#2563EB">신규</span>':""}</div>
-  <div class="ko">${E(x.ko)}</div><div class="en">${E(x.en)}</div>
+  <div class="ko">${impBadge(x.imp)}${E(x.ko)}</div><div class="en">${E(x.en)}</div>
   <div class="tags">${x.edited?'<span class="tg tg-e">수정됨</span>':""}${x.status?`<span class="tg st-${x.scode}">${E(x.status)}</span>`:""}
   <span class="tg tg-s">${E(x.sub)}</span>
   ${PV()?(x.pkrw?`<span class="tg tg-p">${KRW(x.pkrw)}</span>`:(x.hi?`<span class="tg tg-h">우선확인</span>`:""))
@@ -2423,6 +2423,14 @@ function plLastCell(no, code, editable){
  if(!editable) return "";
  return `<button type="button" class="plout" data-no="${no}" title="대기 목록으로" style="width:22px;height:22px;border-radius:5px;border:1px solid #E5E7EB;background:#fff;color:#9CA3AF;font-size:12px;line-height:1;cursor:pointer">×</button>`;
 }
+function impBadge(v){
+ if(!v) return "";
+ const C={S:["#FEE2E2","#DC2626"],A:["#FEF3C7","#B45309"],B:["#DBEAFE","#1D4ED8"],
+          N:["#DCFCE7","#15803D"],C:["#F3F4F6","#6B7280"],D:["#F3F4F6","#9CA3AF"]};
+ const c=C[v]||["#F3F4F6","#9CA3AF"];
+ const t=(v==="N")?"신규":v;
+ return '<span style="display:inline-block;padding:1px 6px;border-radius:4px;background:'+c[0]+';color:'+c[1]+';font-size:9.5px;font-weight:800;margin-right:5px;vertical-align:1px;letter-spacing:.3px">'+t+'</span>';
+}
 function plStBadge(x, editable){
  const v=x.st||"";
  const col = v==="냉동" ? ["#DBEAFE","#1D4ED8"] : (v==="냉장" ? ["#CCFBF1","#0F766E"] : (v==="상온" ? ["#FEF3C7","#B45309"] : ["#F3F4F6","#9CA3AF"]));
@@ -2445,7 +2453,7 @@ function plCard(r,locked,editable,code,st){
  const sel=(PLSEL===no);
  return `<tr class="plcard" ${locked?"":'draggable="true"'} data-no="${no}" style="background:${sel?"#FFFBEB":"#fff"};cursor:${locked?"pointer":"grab"}">
   <td style="${td};text-align:center;width:44px">${img}</td>
-  <td style="${td}"><div style="font-weight:600;color:#111827;line-height:1.35">${E(x.ko)}</div>
+  <td style="${td}"><div style="font-weight:600;color:#111827;line-height:1.35">${impBadge(x.imp)}${E(x.ko)}</div>
    <div style="font-size:10.5px;color:#9CA3AF;margin-top:1px">${E(BNM(x)||"")}${x.wt?" · "+E(x.wt):""}</div></td>
   <td style="${td};text-align:center;width:58px">${plStBadge(x, editable)}</td>
   <td style="${td};color:#6B7280;font-variant-numeric:tabular-nums;width:110px">${E(x.ean||"—")}</td>
@@ -2510,7 +2518,7 @@ function plAddList(code,st){
   + show.map(function(x){
      return '<div class="pladdrow" data-no="'+x.no+'" data-code="'+code+'" data-st="'+st+'" style="display:flex;align-items:center;gap:9px;padding:7px 11px;border-bottom:1px solid #F3F4F6;cursor:pointer;font-size:12px;background:#fff">'
       + (x.im?'<img src="'+x.im+'" style="width:30px;height:30px;object-fit:cover;border-radius:5px;flex:none">':'<div style="width:30px;height:30px;border-radius:5px;background:#F3F4F6;flex:none"></div>')
-      + '<div style="flex:1;min-width:0"><div style="font-weight:600;color:#111827">'+E(x.ko)+'</div>'
+      + '<div style="flex:1;min-width:0"><div style="font-weight:600;color:#111827">'+impBadge(x.imp)+E(x.ko)+'</div>'
       + '<div style="font-size:10.5px;color:#9CA3AF">'+E(BNM(x)||"")+(x.wt?" · "+E(x.wt):"")+(x.ean?" · "+E(x.ean):"")+'</div></div>'
       + '<span style="flex:none;font-size:11px;color:#B45309;font-weight:700">'+(x.pkrw?KRW(x.pkrw):"단가 없음")+'</span>'
       + '<span style="flex:none;color:#1D4ED8;font-weight:700;font-size:15px">+</span></div>';
