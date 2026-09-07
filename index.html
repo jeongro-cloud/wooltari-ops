@@ -1656,7 +1656,7 @@ function drawNew(){
    :'<div style="height:110px;background:#F3F4F6;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;color:#D1D5DB;font-size:11px">NO IMAGE</div>';
   return '<div data-open="'+x.no+'" style="border:1px solid #E5E7EB;border-radius:9px;overflow:hidden;cursor:pointer;background:#fff">'+img+
    '<div style="padding:8px"><div style="font-size:10.5px;color:#9CA3AF">'+String(x.no).padStart(2,"0")+' · '+E(BNM(x)||"")+' · <span style="color:#2563EB">신규</span></div>'+
-   '<div style="font-size:12.5px;font-weight:600;color:#111827;margin:2px 0;line-height:1.35">'+E(x.ko)+'</div>'+
+   '<div style="font-size:12.5px;font-weight:600;color:#111827;margin:2px 0;line-height:1.35">'+impBadge(x.imp)+E(x.ko)+'</div>'+
    '<div style="font-size:11px;color:#6B7280">'+E(x.sub||"")+(x.wt?" · "+E(x.wt):"")+'</div>'+
    '<div style="font-size:11.5px;color:#374151;margin-top:4px">'+(x.pkrw?KRW(x.pkrw):'<span style="color:#D97706">단가없음</span>')+'</div></div></div>';
  }).join("");
@@ -1949,7 +1949,7 @@ function drawQ(){ setTimeout(relang,80);
   const s=st[x.no]||{};
   return `<tr data-n="${x.no}">
    <td class="mono" style="color:#9CA3AF;font-size:11px">${String(x.no).padStart(2,"0")}</td>
-   <td><b>${E(x.ko)}</b><div style="font-size:11px;color:#9CA3AF">${E(BNM(x))} · ${E(x.en)}</div>
+   <td>${impBadge(x.imp)}<b>${E(x.ko)}</b><div style="font-size:11px;color:#9CA3AF">${E(BNM(x))} · ${E(x.en)}</div>
     <div class="qspec">${[x.wt,x.org,x.shelf,x.hs].filter(Boolean).map(E).join(" · ")||"규격 미등록"}</div></td>
    <td><span class="tg tg-s">${E(x.sub)}</span></td>
    <td style="font-size:11.5px;color:#6B7280">${E(x.st)}<div style="font-size:10px;color:#9CA3AF">${x.inco||"FOB"}</div></td>
@@ -2714,7 +2714,7 @@ function plDetail(){
         :'<div style="background:#fff;border:1px dashed #E5E7EB;border-radius:10px;height:110px;display:flex;align-items:center;justify-content:center;color:#D1D5DB;font-size:11px;margin-bottom:12px">NO IMAGE</div>')
    +(canTab("plan")?'<div id="plDrop" data-no="'+x.no+'" style="border:1px dashed #D6D3D1;border-radius:8px;padding:8px;text-align:center;font-size:11px;color:#9CA3AF;margin-bottom:10px;cursor:pointer;background:#fff">📷 클릭 또는 <b>Ctrl+V</b>로 캡처 사진 붙여넣기 <span id="plImgMsg" style="color:#B45309"></span></div><input id="plFile" type="file" accept="image/*" style="display:none">':'')
   +'<div style="font-size:10.5px;color:#9CA3AF;letter-spacing:.06em;margin-bottom:3px">NO.'+String(x.no).padStart(2,"0")+' · '+E(BNM(x)||"")+'</div>'
-   +'<div style="font-size:16px;font-weight:700;color:#111827;line-height:1.35;word-break:keep-all">'+E(x.ko)+'</div>'
+   +'<div style="font-size:16px;font-weight:700;color:#111827;line-height:1.35;word-break:keep-all">'+impBadge(x.imp)+E(x.ko)+'</div>'
    +(x.en?'<div style="font-size:12px;color:#6B7280;margin-top:3px">'+E(x.en)+'</div>':'')
   +'</div>'
   +'<div style="padding:14px 16px 18px">'
@@ -3132,7 +3132,7 @@ function drawPM(){
  if(ff==="noprice") L=L.filter(function(x){return !x.pkrw});
  if(ff==="nospec")  L=L.filter(function(x){return !x.upc||!x.cpp2});
  if(ff==="nophoto") L=L.filter(function(x){return !x.im});
- const CO=[["연번","no",46,0],["카테고리","cat",92,0],["보관","st",56,0],["공급사","sup",108,1],
+ const CO=[["연번","no",46,0],["중요","impb",52,0],["카테고리","cat",92,0],["보관","st",56,0],["공급사","sup",108,1],
   ["SKU","sku",92,1],["바코드","ean",118,1],["제품명(KOR)","ko",250,1],["제품명(Eng)","en",210,1],
   ["구입가","buy",84,2],["마진율%","mpct",72,2],["입수/박스","upc",68,2],["CS/PLT","cpp2",64,2],["팔렛수량","upp",76,2],
   ["공급단가","pkrw",88,2],["팔렛단가","pltp",104,2],["1차협의가","nego",84,2],["GAP","gap",64,2],
@@ -3150,6 +3150,7 @@ function drawPM(){
    const cell='padding:4px 6px;border:1px solid #E5E7EB;text-align:'+(num?"right":"left");
    if(f==="cat") v=(x.cat||"");
    if(f==="mpct") v=(x.buy&&x.pkrw)?Math.round((x.pkrw-x.buy)/x.pkrw*1000)/10:"";
+   if(f==="impb"){ html+='<td style="'+cell+';text-align:center">'+(impBadge(x.imp)||'<span style="color:#D1D5DB">—</span>')+'</td>'; return; }
    if(f==="del"){
     html+='<td style="'+cell+';text-align:center;padding:2px"><button type="button" class="pmdel" data-id="'+x.id+'" data-no="'+x.no+'" title="제품 삭제" style="width:24px;height:24px;border-radius:6px;border:1px solid #FECACA;background:#fff;color:#DC2626;font-size:12px;cursor:pointer;line-height:1">🗑</button></td>';
     return;
@@ -3288,7 +3289,7 @@ function drawMarg(){
   html+='<tr>'
    +'<td style="padding:4px 7px;border:1px solid #E5E7EB">'+String(r.no).padStart(2,"0")+'</td>'
    +'<td style="padding:4px 7px;border:1px solid #E5E7EB">'+E(x.sup||BNM(x)||"")+'</td>'
-   +'<td style="padding:4px 7px;border:1px solid #E5E7EB;color:#374151">'+E(x.ko)+'</td>'
+   +'<td style="padding:4px 7px;border:1px solid #E5E7EB;color:#374151">'+impBadge(x.imp)+E(x.ko)+'</td>'
    +'<td style="'+cell+'">'+unit.toLocaleString()+'</td>'
    +'<td style="'+cell+'">'+ea.toLocaleString()+'</td>'
    +'<td style="'+cell+';font-weight:600">'+supAmt.toLocaleString()+'</td>'
@@ -3671,7 +3672,7 @@ function drawShip(){
     html+='<tr style="background:'+(hit?"#fff":"#F3F4F6")+';opacity:'+(hit?1:.45)+'">'
      +'<td style="padding:5px 9px;border:1px solid #E5E7EB">'+n+'</td>'
      +'<td style="padding:5px 9px;border:1px solid #E5E7EB;font-weight:'+(j===0?"600":"400")+';color:'+(j===0?"#111827":"#D1D5DB")+'">'+(j===0?E(bn):"〃")+'</td>'
-     +'<td style="padding:5px 9px;border:1px solid #E5E7EB;color:#374151">'+E(x.ko)+'</td>'
+     +'<td style="padding:5px 9px;border:1px solid #E5E7EB;color:#374151">'+impBadge(x.imp)+E(x.ko)+'</td>'
      +'<td style="padding:5px 9px;border:1px solid #E5E7EB;color:#6B7280;font-variant-numeric:tabular-nums">'+E(x.ean||"—")+'</td>'
      +'<td style="padding:5px 9px;border:1px solid #E5E7EB;text-align:right">'+(x.upc||"—")+'</td>'
      +'<td style="padding:5px 9px;border:1px solid #E5E7EB;text-align:right">'+(c2!=null?c2.toLocaleString():"—")+'</td>'
@@ -4592,7 +4593,7 @@ function refreshAll(){ try{drawBrand()}catch(e){} setTimeout(relang,80);
 function drawAdded(){
  $("#apan").style.display=added.length?"":"none";
  $("#atab tbody").innerHTML=added.map(x=>`<tr>
-  <td class="r">${x.no}</td><td><b>${E(x.ko)}</b>
+  <td class="r">${x.no}</td><td>${impBadge(x.imp)}<b>${E(x.ko)}</b>
    <div style="font-size:11px;color:#9CA3AF">${E(x.en||"")}</div></td>
   <td>${E(x.bn)}</td><td>${E(CKO(x.c1))}${x.sub?" · "+E(x.sub):""}</td>
   <td>${E(x.st)}</td><td class="r">${x.price?num(x.price).toLocaleString():'<span class="tbc">—</span>'}</td>
