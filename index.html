@@ -2380,7 +2380,7 @@ const DCOL={req:"#6B7280",sea:"#0F766E",mmpa:"#DC2626",liv:"#7C3AED"};
 drawReg();
 
 /* ===== 납품구성 보드 ===== */
-let PLANS=[], PLQ={}, PLDIRTY=false, PLSEL=null, LEGS={}, DEFAULTS=[], POOLOPEN=false, PLOPEN={};
+let PLANS=[], PLQ={}, PLDIRTY=false, PLSEL=null, LEGS={}, DEFAULTS=[], POOLOPEN=false, PLOPEN={}, PLADD={}, PLFOCUS=null;
 const PLPOOL="__pool", PLST=["냉장","냉동","상온"];
 function plItem(no){ return D.items.find(x=>x.no===no); }
 const STG={"제안":["제품제안","#EFF6FF","#1D4ED8"],"협의":["제품협의","#FEF3C7","#B45309"],"확정":["납품확정","#DCFCE7","#15803D"]};
@@ -2474,13 +2474,45 @@ function plPool(){
  if(el) el.textContent = (q||c||st||im) ? (out.length+"건 / 전체 "+all.length+"건") : ("전체 "+all.length+"건");
  return out.map(x=>({no:x.no}));
 }
+function plAddBar(code,st){
+ const key=code+"|"+st;
+ const q=(PLADD[key]||"").trim();
+ let list="";
+ if(q){
+  const used=new Set(); Object.keys(PLQ).forEach(function(k){PLQ[k].forEach(function(r){used.add(r.no)})});
+  const ql=q.toLowerCase();
+  const hit=D.items.filter(function(x){ return !used.has(x.no) && plStorage(x)===st; })
+   .filter(function(x){ return (x.ko+" "+(x.en||"")+" "+(BNM(x)||"")+" "+(x.ean||"")).toLowerCase().indexOf(ql)>=0; });
+  const show=hit.slice(0,12);
+  list = show.length
+   ? '<div style="max-height:260px;overflow:auto;border:1px solid #E5E7EB;border-top:0;background:#fff">'
+     + show.map(function(x){
+       return '<div class="pladdrow" data-no="'+x.no+'" data-code="'+code+'" data-st="'+st+'" style="display:flex;align-items:center;gap:9px;padding:7px 11px;border-bottom:1px solid #F3F4F6;cursor:pointer;font-size:12px" onmouseover="this.style.background=\'#EFF6FF\'" onmouseout="this.style.background=\'#fff\'">'
+        + (x.im?'<img src="'+x.im+'" style="width:30px;height:30px;object-fit:cover;border-radius:5px;flex:none">':'<div style="width:30px;height:30px;border-radius:5px;background:#F3F4F6;flex:none"></div>')
+        + '<div style="flex:1;min-width:0"><div style="font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+E(x.ko)+'</div>'
+        + '<div style="font-size:10.5px;color:#9CA3AF">'+E(BNM(x)||"")+(x.wt?" · "+E(x.wt):"")+(x.ean?" · "+E(x.ean):"")+'</div></div>'
+        + '<span style="flex:none;font-size:11px;color:#B45309;font-weight:700">'+(x.pkrw?KRW(x.pkrw):"단가 없음")+'</span>'
+        + '<span style="flex:none;color:#1D4ED8;font-weight:700;font-size:14px">＋</span></div>';
+      }).join("")
+     + (hit.length>12?'<div style="padding:6px 11px;font-size:11px;color:#9CA3AF;text-align:center">'+hit.length+'건 중 12건 표시 — 검색어를 더 입력하세요</div>':"")
+     + '</div>'
+   : '<div style="padding:10px 11px;border:1px solid #E5E7EB;border-top:0;background:#fff;font-size:11.5px;color:#9CA3AF;text-align:center">「'+E(q)+'」 · '+st+' 보관 제품 중 결과가 없습니다</div>';
+ }
+ return '<div style="border:1px solid #E5E7EB;border-top:0;border-radius:0 0 8px 8px;overflow:hidden">'
+  + '<div style="display:flex;align-items:center;gap:8px;padding:8px 11px;background:#F9FAFB">'
+  + '<span style="font-size:11.5px;color:#6B7280;font-weight:600;flex:none">＋ 제품 추가</span>'
+  + '<input class="pladd" data-code="'+code+'" data-st="'+st+'" value="'+E(PLADD[key]||"")+'" placeholder="제품명·브랜드·바코드로 검색 ('+st+' 보관만)" style="flex:1;padding:6px 10px;font-size:12px;border:1px solid #E5E7EB;border-radius:6px">'
+  + (q?'<button type="button" class="pladdx" data-code="'+code+'" data-st="'+st+'" style="flex:none;padding:5px 9px;font-size:11px;border:1px solid #E5E7EB;background:#fff;border-radius:6px;cursor:pointer;color:#6B7280">지우기</button>':"")
+  + '</div>'+list+'</div>';
+}
 function plZone(code,st,rows,locked){
  const s=plSum(rows);
  const tone = st==="냉동" ? "#EFF6FF" : (st==="냉장" ? "#F0FDFA" : "#FFFBEB");
  const tcol = st==="냉동" ? "#1D4ED8" : (st==="냉장" ? "#0F766E" : "#B45309");
  const ico  = st==="냉동" ? "❄️" : (st==="냉장" ? "🧊" : "☀️");
  const editable = code!==PLPOOL && !locked && canTab("plan");
- if(code!==PLPOOL && !rows.length) return "";
+ const addable = code!==PLPOOL && !locked && canTab("plan");
+ if(code!==PLPOOL && !rows.length && !addable) return "";
  const L=plLeg(code,st);
  const legInp=function(f,v,ph,type){
   return `<input class="pleg" data-code="${code}" data-st="${st}" data-f="${f}" ${type?'type="'+type+'"':''} value="${E(v||"")}" placeholder="${ph}" ${canTab("plan")?"":"readonly"} style="padding:4px 7px;font-size:11.5px;border:1px solid #E5E7EB;border-radius:6px;width:132px">`;
@@ -2505,7 +2537,7 @@ function plZone(code,st,rows,locked){
    ${legBar}
    <div class="pldrop" data-code="${code}" data-st="${st}">
     <table style="width:100%;border-collapse:collapse"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>
-   </div></div>`;
+   </div>${addable?plAddBar(code,st):""}</div>`;
 }
 function plCol(p){
  const locked = p && p.status==="확정";
@@ -2692,6 +2724,38 @@ function plBind(){
    const c=el.dataset.code; PLOPEN[c]=!(PLOPEN[c]===true); drawPlan();
   };
  });
+ document.querySelectorAll("input.pladd").forEach(function(el){
+  el.onmousedown=function(e){ e.stopPropagation(); };
+  el.onclick=function(e){ e.stopPropagation(); };
+  el.oninput=function(){
+   const k=el.dataset.code+"|"+el.dataset.st;
+   PLADD[k]=el.value; PLFOCUS=k; drawPlan();
+  };
+ });
+ document.querySelectorAll("button.pladdx").forEach(function(el){
+  el.onclick=function(e){ e.stopPropagation();
+   PLADD[el.dataset.code+"|"+el.dataset.st]=""; drawPlan(); };
+ });
+ document.querySelectorAll(".pladdrow").forEach(function(el){
+  el.onclick=function(e){
+   e.stopPropagation();
+   const no=+el.dataset.no, code=el.dataset.code, st=el.dataset.st;
+   const x=plItem(no); if(!x) return;
+   const k=plKey(code,st);
+   PLQ[k]=PLQ[k]||[];
+   if(PLQ[k].some(function(z){return z.no===no})){ msg("#plMsg","이미 담겨 있습니다.",1); return; }
+   PLQ[k].push({no:no, plt:null, ea:null, unit:null});
+   PLDIRTY=true; PLADD[code+"|"+st]="";
+   const p=PLANS.find(function(z){return z.code===code});
+   msg("#plMsg","#"+no+" "+x.ko+" → "+((p&&p.label)||code)+" "+st+" 구역에 추가했습니다. 저장을 눌러 반영하세요.");
+   drawPlan();
+  };
+ });
+ if(PLFOCUS){
+  const f=document.querySelector('input.pladd[data-code="'+PLFOCUS.split("|")[0]+'"][data-st="'+PLFOCUS.split("|")[1]+'"]');
+  if(f){ const v=f.value; f.focus(); f.setSelectionRange(v.length,v.length); }
+  PLFOCUS=null;
+ }
  document.querySelectorAll("select.plin").forEach(function(el){
   el.onmousedown=function(e){ e.stopPropagation(); };
   el.onclick=function(e){ e.stopPropagation(); };
