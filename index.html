@@ -2474,6 +2474,19 @@ function plPool(){
  if(el) el.textContent = (q||c||st||im) ? (out.length+"건 / 전체 "+all.length+"건") : ("전체 "+all.length+"건");
  return out.map(x=>({no:x.no}));
 }
+function plPlanStSel(p, only){
+ const bg = only==="냉동" ? "#EFF6FF" : (only==="냉장" ? "#F0FDFA" : "#FFFBEB");
+ const fg = only==="냉동" ? "#1D4ED8" : (only==="냉장" ? "#0F766E" : "#B45309");
+ const ic = only==="냉동" ? "❄" : (only==="냉장" ? "🧊" : "☀");
+ const base='flex:none;font-size:11px;padding:3px 9px;border-radius:99px;white-space:nowrap;min-width:70px;text-align:center;font-weight:700;background:'+bg+';color:'+fg;
+ if(!(canTab("plan") && p.status!=="확정"))
+  return '<span style="'+base+'">'+ic+' '+E(only)+'</span>';
+ return '<select class="plstplan" data-code="'+p.code+'" onclick="event.stopPropagation()" style="'+base+';border:1px solid '+bg+';cursor:pointer">'
+  + ['냉동','냉장','상온'].map(function(z){
+      const i2 = z==="냉동"?"❄":(z==="냉장"?"🧊":"☀");
+      return '<option value="'+z+'"'+(z===only?' selected':'')+'>'+i2+' '+z+'</option>'; }).join("")
+  + '</select>';
+}
 function plAddBar(code,st){
  const key=code+"|"+st;
  const q=(PLADD[key]||"").trim();
@@ -2568,22 +2581,24 @@ function plCol(p){
  const locked = p && p.status==="확정";
  const code = p?p.code:PLPOOL;
  const open = p ? (PLOPEN[code]===true) : POOLOPEN;
+ const only = p ? (p.storage||"냉동") : null;
+ const zlist = p ? [only] : PLST;
  let rows={};
- PLST.forEach(function(st){ rows[st] = p ? plList(code,st) : plPool().filter(function(r){return plStorage(plItem(r.no))===st}); });
- const all=PLST.reduce(function(acc,st){return acc.concat(rows[st])},[]);
+ zlist.forEach(function(st){ rows[st] = p ? plList(code,st) : plPool().filter(function(r){return plStorage(plItem(r.no))===st}); });
+ const all=zlist.reduce(function(acc,st){return acc.concat(rows[st]||[])},[]);
  const s=plSum(all);
  let head;
  if(p){
   const title = canTab("plan")
    ? `<input class="plmeta" data-code="${p.code}" data-f="label" value="${E(p.label||"")}" onclick="event.stopPropagation()" style="font-size:14.5px;font-weight:700;color:#111827;border:1px solid transparent;background:transparent;border-radius:6px;padding:3px 6px;width:190px" onfocus="this.style.borderColor='#E5E7EB';this.style.background='#fff'" onblur="this.style.borderColor='transparent';this.style.background='transparent'">`
    : `<b style="font-size:14.5px">${E(p.label||p.code)}</b>`;
-  const stList=PLST.filter(function(z){return rows[z].length}).join(" · ")||"—";
-  const ld=PLST.map(function(z){return plLeg(code,z)}).filter(function(z){return z&&z.etd})[0]||{};
+  const stList=only;
+  const ld=plLeg(code,only)||{};
   head = `<div class="plhead" data-code="${p.code}" style="display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none;padding:${open?"2px 0 10px":"3px 0"}">
     <span style="color:#9CA3AF;font-size:12px;flex:none">${open?"▾":"▸"}</span>
     <div style="flex:none;min-width:150px">${title}</div>
     <span style="flex:none;font-size:11px;padding:3px 10px;border-radius:99px;background:${STG[p.status||"제안"][1]};color:${STG[p.status||"제안"][2]};white-space:nowrap;font-weight:600">${STG[p.status||"제안"][0]}</span>
-    <span style="flex:none;font-size:11px;padding:3px 9px;border-radius:99px;white-space:nowrap;min-width:44px;text-align:center;background:${stList.indexOf("냉동")>=0?"#EFF6FF":(stList.indexOf("냉장")>=0?"#F0FDFA":"#FFFBEB")};color:${stList.indexOf("냉동")>=0?"#1D4ED8":(stList.indexOf("냉장")>=0?"#0F766E":"#B45309")}">${E(stList)}</span>
+    ${plPlanStSel(p, only)}
     <span style="flex:none;font-size:11px;color:#9CA3AF;white-space:nowrap;min-width:140px">${p.confirm_date?E(p.confirm_date)+" 확정":(ld.etd?"ETD "+E(ld.etd):"")}</span>
     ${(canTab("plan")&&p.status!=="확정")?`<button type="button" class="pldel" data-code="${p.code}" title="회차 삭제" style="flex:none;width:24px;height:24px;border-radius:6px;border:1px solid #FECACA;background:#fff;color:#DC2626;font-size:12px;cursor:pointer">🗑</button>`:""}
     <div style="flex:1"></div>
@@ -2604,7 +2619,7 @@ function plCol(p){
   ? `<div style="display:flex;align-items:center;gap:8px;margin:-4px 0 10px;font-size:11.5px;color:#6B7280"><span>확정일자</span><input class="plmeta" data-code="${p.code}" data-f="confirm_date" type="date" value="${p.confirm_date||""}" ${canTab("plan")?"":"readonly"} style="padding:4px 8px;font-size:11.5px;border:1px solid #E5E7EB;border-radius:6px"></div>` : "";
  const stg = (p&&open) ? `<div style="margin-bottom:10px">${stepper(p)}</div>` : "";
  const note = (p&&open&&p.note) ? `<div style="font-size:11px;color:#9CA3AF;margin:-4px 0 10px">${E(p.note)}</div>` : "";
- const zones = open ? PLST.map(function(st){return plZone(code,st,rows[st],locked)}).join("") : "";
+ const zones = open ? zlist.map(function(st){return plZone(code,st,rows[st],locked)}).join("") : "";
  return `<div class="plcol" style="background:#fff;border:1px solid ${locked?"#BBF7D0":"#E5E7EB"};border-radius:12px;padding:${open?"14px 16px":"10px 16px"};margin-bottom:12px;box-shadow:0 1px 2px rgba(17,24,39,.04)">${head}${stg}${cd}${note}${zones}</div>`;
 }
 function drawPlan(){
@@ -2747,6 +2762,34 @@ function plBind(){
   el.onclick=function(e){
    if(e.target.tagName==="INPUT"||e.target.tagName==="BUTTON") return;
    const c=el.dataset.code; PLOPEN[c]=!(PLOPEN[c]===true); drawPlan();
+  };
+ });
+ document.querySelectorAll("select.plstplan").forEach(function(el){
+  el.onmousedown=function(e){ e.stopPropagation(); };
+  el.onclick=function(e){ e.stopPropagation(); };
+  el.onchange=async function(e){
+   e.stopPropagation();
+   const code=el.dataset.code, v=el.value;
+   const p=PLANS.find(function(z){return z.code===code}); if(!p) return;
+   const old=p.storage||"냉동";
+   if(old===v) return;
+   let moved=0;
+   PLST.forEach(function(st){ if(st!==v) moved += (PLQ[plKey(code,st)]||[]).length; });
+   if(moved && !confirm((p.label||code)+"\n\n보관을 "+old+" → "+v+" 로 바꿀까요?\n\n담긴 품목 "+moved+"건 중 보관이 다른 제품은\n대기 목록으로 빠집니다.")){ drawPlan(); return; }
+   try{
+    await api({action:"plan_upsert",plan:{code:code,storage:v}});
+    p.storage=v;
+    let out=0;
+    PLST.forEach(function(st){
+     if(st===v) return;
+     const k=plKey(code,st);
+     out += (PLQ[k]||[]).length;
+     PLQ[k]=[];
+    });
+    if(out) PLDIRTY=true;
+    msg("#plMsg",(p.label||code)+" 보관을 "+v+"로 바꿨습니다."+(out?" 품목 "+out+"건이 대기 목록으로 빠졌습니다. 저장을 눌러 반영하세요.":""));
+    drawPlan();
+   }catch(err){ msg("#plMsg","보관 변경 실패 — "+err.message,1); drawPlan(); }
   };
  });
  plAddRowBind();
