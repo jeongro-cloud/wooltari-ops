@@ -2512,7 +2512,23 @@ function plAddRefresh(code,st){
  plAddRowBind();
 }
 function plAddRowBind(){
- plAddRowBind();
+ document.querySelectorAll(".pladdrow").forEach(function(el){
+  el.onmouseover=function(){ el.style.background="#EFF6FF"; };
+  el.onmouseout=function(){ el.style.background="#fff"; };
+  el.onclick=function(ev){
+   ev.stopPropagation();
+   const no=+el.dataset.no, code=el.dataset.code, st=el.dataset.st;
+   const x=plItem(no); if(!x) return;
+   const k=plKey(code,st);
+   PLQ[k]=PLQ[k]||[];
+   if(PLQ[k].some(function(z){return z.no===no})){ msg("#plMsg","이미 담겨 있습니다.",1); return; }
+   PLQ[k].push({no:no, plt:null, ea:null, unit:null});
+   PLDIRTY=true; PLADD[code+"|"+st]="";
+   const p=PLANS.find(function(z){return z.code===code});
+   msg("#plMsg","#"+no+" "+x.ko+" 추가 — 저장을 눌러 반영하세요.");
+   drawPlan();
+  };
+ });
 }
 function plZone(code,st,rows,locked){
  const s=plSum(rows);
@@ -2733,6 +2749,7 @@ function plBind(){
    const c=el.dataset.code; PLOPEN[c]=!(PLOPEN[c]===true); drawPlan();
   };
  });
+ plAddRowBind();
  document.querySelectorAll("input.pladd").forEach(function(el){
   el.onmousedown=function(e){ e.stopPropagation(); };
   el.onclick=function(e){ e.stopPropagation(); };
