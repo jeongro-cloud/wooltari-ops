@@ -2412,6 +2412,17 @@ function plAmount(r){ if(r.amt!=null) return r.amt; return plUnit(r)*(r.ea||0); 
 function plSum(list){ let krw=0,plt=0,cbm=0,units=0,kg=0;
  list.forEach(function(r){ const x=plItem(r.no); if(!x)return; krw+=plAmount(r); plt+=(r.plt||0); units+=(r.ea||0); kg+=plKg(r); if(x.cbm) cbm+=x.cbm*(r.plt||0); });
  return {krw:krw, plt:Math.round(plt*100)/100, cbm:Math.round(cbm*1000)/1000, units:units, kg:Math.round(kg), n:list.length}; }
+function plLastCell(no, code, editable){
+ if(!code || code===PLPOOL){
+  const opts=PLANS.filter(function(p){return p.status!=="확정"})
+   .map(function(p){return `<option value="${p.code}">${E(p.label||p.code)}</option>`}).join("");
+  if(!opts) return "";
+  return `<select class="plin" data-no="${no}" draggable="false" title="회차에 담기" style="width:26px;padding:3px 0;font-size:13px;text-align:center;border:1px solid #BFDBFE;background:#EFF6FF;color:#1D4ED8;border-radius:5px;cursor:pointer;font-weight:700">
+    <option value="">＋</option>${opts}</select>`;
+ }
+ if(!editable) return "";
+ return `<button type="button" class="plout" data-no="${no}" title="대기 목록으로" style="width:22px;height:22px;border-radius:5px;border:1px solid #E5E7EB;background:#fff;color:#9CA3AF;font-size:12px;line-height:1;cursor:pointer">×</button>`;
+}
 function plStBadge(x, editable){
  const v=x.st||"";
  const col = v==="냉동" ? ["#DBEAFE","#1D4ED8"] : (v==="냉장" ? ["#CCFBF1","#0F766E"] : (v==="상온" ? ["#FEF3C7","#B45309"] : ["#F3F4F6","#9CA3AF"]));
@@ -2444,7 +2455,7 @@ function plCard(r,locked,editable,code,st){
   <td style="${td};width:86px">${editable?inp("ea",r.ea,"0"):`<div style="text-align:right">${(r.ea||0).toLocaleString()}</div>`}</td>
   <td style="${td};width:86px">${editable?inp("unit",r.unit==null?(x.pkrw||""):r.unit,"원"):`<div style="text-align:right">${unit.toLocaleString()}</div>`}</td>
   <td style="${td};text-align:right;width:104px;font-weight:700;color:#B45309">${amt.toLocaleString()}</td>
-  <td style="${td};text-align:center;width:36px">${editable?`<button type="button" class="plout" data-no="${no}" title="대기 목록으로" style="width:22px;height:22px;border-radius:5px;border:1px solid #E5E7EB;background:#fff;color:#9CA3AF;font-size:12px;line-height:1;cursor:pointer">×</button>`:""}</td>
+  <td style="${td};text-align:center;width:36px">${plLastCell(no, code, editable)}</td>
  </tr>`;
 }
 function plPool(){
@@ -2679,6 +2690,25 @@ function plBind(){
   el.onclick=function(e){
    if(e.target.tagName==="INPUT"||e.target.tagName==="BUTTON") return;
    const c=el.dataset.code; PLOPEN[c]=!(PLOPEN[c]===true); drawPlan();
+  };
+ });
+ document.querySelectorAll("select.plin").forEach(function(el){
+  el.onmousedown=function(e){ e.stopPropagation(); };
+  el.onclick=function(e){ e.stopPropagation(); };
+  el.onchange=function(e){
+   e.stopPropagation();
+   const no=+el.dataset.no, code=el.value;
+   if(!code) return;
+   const x=plItem(no); if(!x){ return; }
+   const st=plStorage(x);
+   const k=plKey(code,st);
+   PLQ[k]=PLQ[k]||[];
+   if(PLQ[k].some(function(z){return z.no===no})){ msg("#plMsg","이미 담겨 있습니다.",1); drawPlan(); return; }
+   PLQ[k].push({no:no, plt:null, ea:null, unit:null});
+   PLDIRTY=true;
+   const p=PLANS.find(function(z){return z.code===code});
+   msg("#plMsg","#"+no+" "+x.ko+" → "+((p&&p.label)||code)+" "+st+" 구역에 담았습니다. 저장을 눌러 반영하세요.");
+   drawPlan();
   };
  });
  document.querySelectorAll("select.plstsel").forEach(function(el){
