@@ -2624,12 +2624,29 @@ function plCol(p){
 }
 function drawPlan(){
  if(!$("#plBoard")) return;
+ let anchor=null, aTop=0;
+ try{
+  const heads=[].slice.call(document.querySelectorAll(".plhead"));
+  for(let i=0;i<heads.length;i++){
+   const r=heads[i].getBoundingClientRect();
+   if(r.bottom > 90){ anchor=heads[i].dataset.code; aTop=r.top; break; }
+  }
+ }catch(e){}
  const __sy = window.scrollY || document.documentElement.scrollTop || 0;
  __drawPlanBody();
- if(Math.abs((window.scrollY||0) - __sy) > 2){
-  window.scrollTo(0, __sy);
-  requestAnimationFrame(function(){ window.scrollTo(0, __sy); });
- }
+ const restore=function(){
+  if(anchor){
+   const el=document.querySelector('.plhead[data-code="'+anchor+'"]');
+   if(el){
+    const d=el.getBoundingClientRect().top - aTop;
+    if(Math.abs(d)>2) window.scrollBy(0,d);
+    return;
+   }
+  }
+  if(Math.abs((window.scrollY||0)-__sy)>2) window.scrollTo(0,__sy);
+ };
+ restore();
+ requestAnimationFrame(restore);
 }
 function __drawPlanBody(){
  const cats=D.cats.filter(function(c){return D.items.some(function(x){return x.c1===c.id})});
