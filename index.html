@@ -1761,13 +1761,48 @@ function pickCat(id){
  drawCat();
 }
 const sel=new Set(), excl=new Set();
+let THUMBQ=[], THUMBT=null, THUMBOBS=null;
+function thumbNeed(no){
+ if(THUMBQ.indexOf(no)>=0) return;
+ THUMBQ.push(no);
+ clearTimeout(THUMBT);
+ THUMBT=setTimeout(thumbFlush, 120);
+}
+async function thumbFlush(){
+ const rows=THUMBQ.splice(0, 40);
+ if(!rows.length) return;
+ try{
+  const r=await api({action:"thumbs",rows:rows});
+  const m=r.thumbs||{};
+  Object.keys(m).forEach(function(k){
+   const x=D.items.find(function(z){return String(z.no)===String(k)});
+   if(x && !x.im){ x.im=m[k];
+    document.querySelectorAll('[data-thumb="'+k+'"]').forEach(function(el){
+     el.outerHTML='<img src="'+m[k]+'" alt="" loading="lazy">';
+    });
+   }
+  });
+ }catch(e){}
+ if(THUMBQ.length) THUMBT=setTimeout(thumbFlush, 120);
+}
+function thumbObserve(){
+ if(!("IntersectionObserver" in window)){
+  document.querySelectorAll("[data-thumb]").forEach(function(el){ thumbNeed(+el.dataset.thumb); });
+  return;
+ }
+ if(THUMBOBS) THUMBOBS.disconnect();
+ THUMBOBS=new IntersectionObserver(function(es){
+  es.forEach(function(e){ if(e.isIntersecting){ thumbNeed(+e.target.dataset.thumb); THUMBOBS.unobserve(e.target); } });
+ }, {rootMargin:"300px"});
+ document.querySelectorAll("[data-thumb]").forEach(function(el){ THUMBOBS.observe(el); });
+}
 function pcard(x){
  const [t,cl]=SC[x.scope]||SC.non;
  const ex=excl.has(x.no);
  return `<div class="pc${ex?" ex":""}${sel.has(x.no)?" on":""}" data-n="${x.no}">
   <label class="selbox" title="선택"><input type="checkbox" data-sel="${x.no}" ${sel.has(x.no)?"checked":""}></label>
   ${ex?'<span class="exbadge">제외</span>':""}
-  <div class="ph" data-open="${x.no}">${x.im?`<img src="${x.im}" alt="${E(x.ko)}" loading="lazy">`:'<span class="tbc mono" style="font-size:10px">NO IMAGE</span>'}</div>
+  <div class="ph" data-open="${x.no}">${x.im?`<img src="${x.im}" alt="${E(x.ko)}" loading="lazy">`:(x.hasImg?`<span data-thumb="${x.no}" class="tbc mono" style="font-size:10px;color:#E5E7EB">···</span>`:'<span class="tbc mono" style="font-size:10px">NO IMAGE</span>')}</div>
   <div class="tx" data-open="${x.no}"><div class="meta">${String(x.no).padStart(2,"0")} · ${E(BNM(x))}${x.isNew?' · <span style="color:#2563EB">신규</span>':""}</div>
   <div class="ko">${impBadge(x.imp)}${E(x.ko)}</div><div class="en">${E(x.en)}</div>
   <div class="tags">${x.edited?'<span class="tg tg-e">수정됨</span>':""}${x.status?`<span class="tg st-${x.scode}">${E(x.status)}</span>`:""}
@@ -1862,6 +1897,7 @@ function drawP(){
  $("#pcnt").textContent=`${L.length}개 품목 표시 중 (전체 ${D.items.length}개)`
   +(sel.size?` · 선택 ${sel.size}개`:"")+(excl.size?` · 제외 ${excl.size}개`:"");
  bindCards($("#pgrid")); updSel();
+ try{ thumbObserve(); }catch(e){}
 }
 ["fc","fs","fb","fm","fst","fp","fex","fed"].forEach(id=>$("#"+id).onchange=()=>{drawP();if(curC)drawCat()});
 $("#fq").oninput=drawP;
