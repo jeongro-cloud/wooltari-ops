@@ -468,8 +468,19 @@ body.pub #topOut, body.pub #sideOut{display:none!important}
  <section id="brand"><div class="wrap">
   <div class="kpis" id="bKpi"></div>
   <div class="panel"><h3>브랜드별 현황</h3>
-   <p class="hint">브랜드 카드를 누르면 해당 브랜드 제품만 조회합니다.</p>
-   <div class="bd"><div class="catgrid" id="bGrid"></div></div></div>
+   <p class="hint">브랜드를 누르면 해당 브랜드 제품만 조회합니다.</p>
+   <div class="bd">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+     <input id="bq" placeholder="브랜드 검색" style="flex:1;min-width:180px;padding:8px 12px;border:1px solid #E5E7EB;border-radius:8px;font-size:13px">
+     <select id="bsort" style="padding:8px 12px;border:1px solid #E5E7EB;border-radius:8px;font-size:13px">
+      <option value="name">이름순</option><option value="cnt">품목 많은순</option>
+      <option value="s">S등급 많은순</option><option value="lack">단가 미확보순</option></select>
+     <select id="bview" style="padding:8px 12px;border:1px solid #E5E7EB;border-radius:8px;font-size:13px">
+      <option value="list">목록형</option><option value="card">카드형</option></select>
+     <span id="bcnt" style="font-size:12px;color:#6B7280;white-space:nowrap"></span>
+    </div>
+    <div id="bGrid"></div>
+   </div></div>
   <div class="panel"><h3>브랜드 × 중분류 분포</h3>
    <p class="hint">브랜드별로 품목이 어느 중분류에 몰려 있는지, 단가·규격이 얼마나 확보됐는지 보여줍니다.</p>
    <div class="bd flush scroll"><table id="bTab"><thead><tr>
@@ -4412,57 +4423,93 @@ function drawBrand(){
  if(!$("#bGrid")) return;
  const BS={};
  D.items.forEach(x=>{ const b=BNM(x)||"(미지정)"; (BS[b]=BS[b]||[]).push(x); });
- const names=Object.keys(BS).sort(function(a,b){ return a.localeCompare(b,"ko"); });
+ const st=function(b){ const L=BS[b];
+  return { n:L.length,
+   s:L.filter(z=>z.imp==="S").length, a:L.filter(z=>z.imp==="A").length, bb:L.filter(z=>z.imp==="B").length,
+   np:L.filter(z=>z.pkrw).length, dim:L.filter(z=>z.cL).length,
+   img:L.filter(z=>z.im||z.hasImg).length, mm:L.filter(z=>z.scope==="wild").length,
+   subs:[...new Set(L.map(z=>z.sub).filter(Boolean))],
+   pr:L.filter(z=>z.pkrw).map(z=>z.pkrw) }; };
  const noDim=D.items.filter(x=>!x.cL).length;
+ const all=Object.keys(BS);
  const k=$("#bKpi");
  if(k) k.innerHTML=`
-  <div class="kpi"><span>브랜드</span><b>${names.length}</b><i>공급사</i></div>
+  <div class="kpi"><span>브랜드</span><b>${all.length}</b><i>공급사</i></div>
   <div class="kpi"><span>총 품목</span><b>${D.items.length}</b>
-   <i>브랜드당 평균 ${names.length?Math.round(D.items.length/names.length):0}개</i></div>
+   <i>브랜드당 평균 ${all.length?Math.round(D.items.length/all.length):0}개</i></div>
   <div class="kpi blu"><span>단가 확보</span><b>${D.items.filter(x=>x.pkrw).length}</b>
    <i>/ ${D.items.length}개</i></div>
   <div class="kpi ${noDim?"red":"grn"}"><span>박스규격 미기재</span><b>${noDim}</b>
    <i>${noDim?"RFQ 회신 대기":"전량 확보"}</i></div>`;
- $("#bGrid").innerHTML=names.map(b=>{
-  const L=BS[b], pr=L.filter(x=>x.pkrw).map(x=>x.pkrw);
-  const subs=[...new Set(L.map(x=>x.sub).filter(Boolean))];
-  const mm=L.filter(x=>x.scope==="wild").length, hi=L.filter(x=>x.hi).length;
-  const dim=L.filter(x=>x.cL).length, np=L.filter(x=>x.pkrw).length;
-  const EN={"건어물 밥상":"GUNEOMUL BAPSANG","캔쿡":"CAN COOK","KFISH":"KFISH SEAFOOD","생활공작소":"SAENGONG"};
-  const IC={"건어물 밥상":"🐟","캔쿡":"🥫","KFISH":"🍱","생활공작소":"🧺"};
-  const nS=L.filter(function(z){return z.imp==="S"}).length;
-  const nA=L.filter(function(z){return z.imp==="A"}).length;
-  const nB=L.filter(function(z){return z.imp==="B"}).length;
-  const nImg=L.filter(function(z){return z.im||z.hasImg}).length;
-  const pct=Math.round(np/L.length*100);
-  const ini=(b||"?").replace(/^\[|\]$/g,"").trim().charAt(0);
-  const hue=(function(){ let s=0; for(let i2=0;i2<b.length;i2++) s=(s*31+b.charCodeAt(i2))%360; return s; })();
-  return `<div class="cat" data-b="${E(b)}" style="text-align:left;padding:15px 16px">
-   <div style="display:flex;align-items:center;gap:11px;margin-bottom:11px">
-    <div style="flex:none;width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:hsl(${hue},70%,95%);color:hsl(${hue},55%,38%);font-size:17px;font-weight:800">${E(ini)}</div>
-    <div style="flex:1;min-width:0">
-     <div style="font-size:14px;font-weight:700;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${E(b)}</div>
-     <div style="font-size:10.5px;color:#9CA3AF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${E(subs.slice(0,3).join(" · "))||"—"}</div>
+
+ const q=(($("#bq")&&$("#bq").value)||"").trim().toLowerCase();
+ const sort=($("#bsort")&&$("#bsort").value)||"name";
+ const view=($("#bview")&&$("#bview").value)||"list";
+ let names=all.filter(b=>!q||b.toLowerCase().indexOf(q)>=0);
+ names.sort(function(x,y){
+  const A=st(x), B=st(y);
+  if(sort==="cnt")  return B.n-A.n || x.localeCompare(y,"ko");
+  if(sort==="s")    return B.s-A.s || B.n-A.n || x.localeCompare(y,"ko");
+  if(sort==="lack") return (B.n-B.np)-(A.n-A.np) || x.localeCompare(y,"ko");
+  return x.localeCompare(y,"ko");
+ });
+ const cnt=$("#bcnt");
+ if(cnt) cnt.textContent = q ? (names.length+"개 / 전체 "+all.length+"개") : ("전체 "+all.length+"개");
+
+ const badge=function(t,n,bg,fg){ return n?`<span style="padding:1px 5px;border-radius:3px;background:${bg};color:${fg};font-size:9.5px;font-weight:700">${t} ${n}</span>`:""; };
+ const bar=function(p){ const c=p===100?"#16A34A":(p>=50?"#2563EB":"#F59E0B");
+  return `<span style="display:inline-block;width:52px;height:4px;border-radius:99px;background:#F3F4F6;overflow:hidden;vertical-align:middle"><span style="display:block;height:100%;width:${p}%;background:${c}"></span></span>`; };
+
+ if(view==="card"){
+  $("#bGrid").className="catgrid";
+  $("#bGrid").innerHTML=names.map(function(b){
+   const s2=st(b), pct=Math.round(s2.np/s2.n*100);
+   const ini=(b||"?").replace(/^\\[|\\]$/g,"").trim().charAt(0);
+   let hv=0; for(let i2=0;i2<b.length;i2++) hv=(hv*31+b.charCodeAt(i2))%360;
+   return `<div class="cat" data-b="${E(b)}" style="padding:14px 15px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+     <div style="flex:none;width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:hsl(${hv},68%,95%);color:hsl(${hv},52%,38%);font-size:15px;font-weight:800">${E(ini)}</div>
+     <div style="flex:1;min-width:0">
+      <div style="font-size:13.5px;font-weight:700;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${E(b)}</div>
+      <div style="font-size:10px;color:#9CA3AF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${E(s2.subs.slice(0,2).join(" · "))||"—"}</div></div>
+     <div style="flex:none;font-size:17px;font-weight:800;color:#111827">${s2.n}</div>
     </div>
-    <div style="flex:none;text-align:right">
-     <div style="font-size:19px;font-weight:800;color:#111827;line-height:1">${L.length}</div>
-     <div style="font-size:9.5px;color:#9CA3AF">품목</div></div>
-   </div>
-   <div style="display:flex;gap:4px;margin-bottom:9px">
-    ${nS?`<span style="padding:1px 6px;border-radius:3px;background:#FEE2E2;color:#B91C1C;font-size:9.5px;font-weight:700">S ${nS}</span>`:""}
-    ${nA?`<span style="padding:1px 6px;border-radius:3px;background:#FFEDD5;color:#C2410C;font-size:9.5px;font-weight:700">A ${nA}</span>`:""}
-    ${nB?`<span style="padding:1px 6px;border-radius:3px;background:#DBEAFE;color:#1D4ED8;font-size:9.5px;font-weight:700">B ${nB}</span>`:""}
-    ${mm?`<span style="padding:1px 6px;border-radius:3px;background:#F3E8FF;color:#7E22CE;font-size:9.5px;font-weight:700">MMPA ${mm}</span>`:""}
-   </div>
-   <div style="height:4px;border-radius:99px;background:#F3F4F6;overflow:hidden;margin-bottom:6px">
-    <div style="height:100%;width:${pct}%;background:${pct===100?"#16A34A":(pct>=50?"#2563EB":"#F59E0B")}"></div>
-   </div>
-   <div style="display:flex;justify-content:space-between;font-size:10px;color:#9CA3AF">
-    <span>단가 ${np}/${L.length}${PV()&&pr.length?` · ${KRW(Math.min(...pr))}~${KRW(Math.max(...pr))}`:""}</span>
-    <span>규격 ${dim} · 사진 ${nImg}</span>
-   </div></div>`;
- }).join("");
- $$("#bGrid .cat").forEach(c=>c.onclick=()=>{
+    <div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:8px;min-height:15px">
+     ${badge("S",s2.s,"#FEE2E2","#B91C1C")}${badge("A",s2.a,"#FFEDD5","#C2410C")}${badge("B",s2.bb,"#DBEAFE","#1D4ED8")}
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:#9CA3AF">
+     ${bar(pct)}<span>단가 ${s2.np}/${s2.n}</span></div>
+   </div>`; }).join("");
+ } else {
+  $("#bGrid").className="";
+  $("#bGrid").innerHTML='<div style="border:1px solid #E5E7EB;border-radius:9px;overflow:hidden">'
+   + names.map(function(b,idx){
+   const s2=st(b), pct=Math.round(s2.np/s2.n*100);
+   const ini=(b||"?").replace(/^\\[|\\]$/g,"").trim().charAt(0);
+   let hv=0; for(let i2=0;i2<b.length;i2++) hv=(hv*31+b.charCodeAt(i2))%360;
+   return `<div class="brow" data-b="${E(b)}" style="display:flex;align-items:center;gap:11px;padding:9px 13px;cursor:pointer;background:#fff;border-bottom:${idx===names.length-1?"0":"1px solid #F3F4F6"}">
+    <div style="flex:none;width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:hsl(${hv},68%,95%);color:hsl(${hv},52%,38%);font-size:12.5px;font-weight:800">${E(ini)}</div>
+    <div style="flex:1;min-width:0">
+     <div style="font-size:13px;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${E(b)}</div>
+     <div style="font-size:10px;color:#9CA3AF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${E(s2.subs.slice(0,3).join(" · "))||"—"}</div></div>
+    <div style="flex:none;display:flex;gap:3px;width:118px;justify-content:flex-end">
+     ${badge("S",s2.s,"#FEE2E2","#B91C1C")}${badge("A",s2.a,"#FFEDD5","#C2410C")}${badge("B",s2.bb,"#DBEAFE","#1D4ED8")}
+    </div>
+    <div style="flex:none;display:flex;align-items:center;gap:6px;width:104px;justify-content:flex-end;font-size:10.5px;color:#9CA3AF">
+     ${bar(pct)}<span style="width:38px;text-align:right">${s2.np}/${s2.n}</span></div>
+    <div style="flex:none;width:46px;text-align:right;font-size:14px;font-weight:800;color:#111827">${s2.n}</div>
+   </div>`; }).join("") + '</div>';
+ }
+ ["bq","bsort","bview"].forEach(function(id){
+  const el=$("#"+id); if(!el||el.dataset.on) return; el.dataset.on="1";
+  if(id==="bq"){ el.oninput=function(){ clearTimeout(el.__t); el.__t=setTimeout(drawBrand,180); }; }
+  else el.onchange=drawBrand;
+ });
+ $$("#bGrid .cat, #bGrid .brow").forEach(c=>{
+  c.onmouseover=function(){ c.style.background="#F9FAFB"; };
+  c.onmouseout=function(){ c.style.background="#fff"; };
+ });
+ $("#bGrid .cat, #bGrid .brow").forEach(c=>c.onclick=()=>{
   if(ME&&ME.role==="master"){ go("prod"); const fb=$("#fb"); if(fb){ fb.value=c.dataset.b; drawP(); } } else { go("cat"); }
  });
  const rows=[];
