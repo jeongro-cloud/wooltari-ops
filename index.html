@@ -1748,6 +1748,7 @@ function drawNew(){
    '<div style="font-size:11.5px;color:#374151;margin-top:4px">'+(x.pkrw?KRW(x.pkrw):'<span style="color:#D97706">단가없음</span>')+'</div></div></div>';
  }).join("");
  box.querySelectorAll("[data-open]").forEach(function(el){ el.onclick=function(){ try{open_(+el.dataset.open)}catch(_){} }; });
+ try{ box.querySelectorAll("[data-thumb]").forEach(function(el){ thumbNeed(+el.dataset.thumb, true); }); }catch(e){}
  try{ thumbObserve(); }catch(e){}
  try{ drawGradeReview(); }catch(e){}
 }
@@ -1832,11 +1833,11 @@ function pickCat(id){
 }
 const sel=new Set(), excl=new Set();
 let THUMBQ=[], THUMBT=null, THUMBOBS=null;
-function thumbNeed(no){
+function thumbNeed(no, first){
  if(THUMBQ.indexOf(no)>=0) return;
- THUMBQ.push(no);
+ if(first) THUMBQ.unshift(no); else THUMBQ.push(no);
  clearTimeout(THUMBT);
- THUMBT=setTimeout(thumbFlush, 120);
+ THUMBT=setTimeout(thumbFlush, first?0:120);
 }
 async function thumbFlush(){
  const rows=THUMBQ.splice(0, 40);
