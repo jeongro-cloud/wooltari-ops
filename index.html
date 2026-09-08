@@ -1799,7 +1799,7 @@ async function thumbFlush(){
 function thumbObserve(){
  const els=[].slice.call(document.querySelectorAll("[data-thumb]"));
  if(!els.length) return;
- els.slice(0,400).forEach(function(el){ thumbNeed(+el.dataset.thumb); });
+ els.forEach(function(el){ thumbNeed(+el.dataset.thumb); });
 }
 function pcard(x){
  const [t,cl]=SC[x.scope]||SC.non;
