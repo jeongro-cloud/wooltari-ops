@@ -1405,12 +1405,12 @@ $("#ubtn").onclick=e=>{e.stopPropagation();$("#umenu").classList.toggle("on")};
 document.addEventListener("click",()=>$("#umenu").classList.remove("on"));
 $("#umenu").onclick=e=>e.stopPropagation();
 $("#umAcct").onclick=()=>{$("#umenu").classList.remove("on");go("acct")};
-function askLogout(){ $("#umenu").classList.remove("on"); $("#lomodal").classList.add("on"); }
+function askLogout(){ $("#umenu").classList.remove("on"); (closeModals("lomodal"), $("#lomodal").classList.add("on")); }
 $("#umOut").onclick=askLogout;
 $("#topOut").onclick=askLogout;
 $("#sideOut").onclick=askLogout;
 $("#loNo").onclick=()=>$("#lomodal").classList.remove("on");
-$("#pubInfo").onclick=()=>$("#pubmodal").classList.add("on");
+$("#pubInfo").onclick=()=>(closeModals("pubmodal"), $("#pubmodal").classList.add("on"));
 $("#pubOk").onclick=()=>$("#pubmodal").classList.remove("on");
 $("#prevChk").onchange=e=>{
  PREVIEW=e.target.checked;
@@ -1557,7 +1557,7 @@ function openUser(i){
  $("#umAct").value=(u.act===false)?"n":"y"; $("#umMemo").value=u.memo||"";
  $("#umPw").placeholder = i===null ? "비밀번호 입력" : "변경할 때만 입력";
  $("#umErr").textContent="";
- $("#usermodal").classList.add("on");
+ (closeModals("usermodal"), $("#usermodal").classList.add("on"));
 }
 $("#uAdd").onclick=()=>openUser(null);
 $("#umNo").onclick=()=>$("#usermodal").classList.remove("on");
@@ -2364,7 +2364,7 @@ function openBulk(){
  D.cats.forEach(c=>c1.add(new Option(c.ko,c.id)));
  ["bkSub","bkBn","bkOrg"].forEach(id=>$("#"+id).value="");
  $("#bkSt").value="";
- $("#bulkmodal").classList.add("on");
+ (closeModals("bulkmodal"), $("#bulkmodal").classList.add("on"));
 }
 $("#bkNo").onclick=()=>$("#bulkmodal").classList.remove("on");
 $("#bkYes").onclick=()=>{
@@ -4655,7 +4655,7 @@ function importPreview(items,errs){
   <td style="font-size:11px;color:#DC2626">${x.miss.length?E(x.miss.join(", ")):""}</td></tr>`).join("");
  $("#impYes").disabled=!okN;
  $("#impYes").textContent=okN?`${okN}건 적용`:"적용할 항목 없음";
- $("#impmodal").classList.add("on");
+ (closeModals("impmodal"), $("#impmodal").classList.add("on"));
 }
 
 let IMP=[], IMPBRAND=null;
@@ -4725,7 +4725,14 @@ $("#pImg").onchange=async e=>{
   const payload=hits.map(x=>x.second?{row_no:x.row_no,image2_data:x.data}:{row_no:x.row_no,image_data:x.data});
   for(let i=0;i<payload.length;i+=8)
    await api({action:"product_images",images:payload.slice(i,i+8)});
-  await loadProducts(); refreshAll();
+  await loadProducts();
+  hits.forEach(function(x){
+   const t=D.items.find(function(z){return z.no===x.row_no});
+   if(!t) return;
+   if(x.second){ t.im2=x.data; t.hasImg2=true; } else { t.im=x.data; t.hasImg=true; }
+   t.__d=1;
+  });
+  refreshAll();
   msg("#pcnt",`사진 ${hits.length}장을 등록했습니다.${miss.length?" (실패 "+miss.length+"장)":""}`);
  }catch(err){ msg("#pcnt","사진 등록 실패 — "+err.message,1); }
 };
@@ -4754,6 +4761,11 @@ const PF=[["ko","제품명 (국문) ＊","text"],["en","제품명 (영문)","tex
  ["ckg","박스중량 (kg)","num"],["upc","박스입수 (EA)","num"],["moq","MOQ","num"],
  ["pkrw","공급가 (원)","price"],["hs","HS CODE","text"],["ean","EAN 바코드","text"],
  ["rem","비고","text"]];
+function closeModals(except){
+ document.querySelectorAll(".modal.on").forEach(function(m){
+  if(!except || m.id!==except) m.classList.remove("on");
+ });
+}
 $("#pNew").onclick=()=>{
  const BRANDS=[...new Set(D.items.map(x=>BNM(x)).filter(Boolean))];
  $("#pmForm").innerHTML=PF.map(([k,lb,t])=>{
@@ -4764,7 +4776,7 @@ $("#pNew").onclick=()=>{
   return `<label>${lb}</label><input data-p="${k}" type="${t==="num"?"number":"text"}">`;
  }).join("");
  $("#pmErr").textContent="";
- $("#prodmodal").classList.add("on");
+ (closeModals("prodmodal"), $("#prodmodal").classList.add("on"));
 };
 $("#pmNo").onclick=()=>$("#prodmodal").classList.remove("on");
 $("#pmYes").onclick=async()=>{
