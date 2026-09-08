@@ -2940,9 +2940,10 @@ function plBind(){
    PLQ[k]=PLQ[k]||[];
    if(PLQ[k].some(function(z){return z.no===no})){ msg("#plMsg","이미 담겨 있습니다.",1); return; }
    PLQ[k].push({no:no, plt:null, ea:null, unit:null});
-   PLDIRTY=true; PLADD[code+"|"+st]="";
+   PLDIRTY=true;
    const p=PLANS.find(function(z){return z.code===code});
    msg("#plMsg","#"+no+" "+x.ko+" → "+((p&&p.label)||code)+" "+st+" 구역에 추가했습니다. 저장을 눌러 반영하세요.");
+   PLKEEP=code+"|"+st;
    drawPlan();
   };
  });
