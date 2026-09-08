@@ -1786,15 +1786,9 @@ async function thumbFlush(){
  if(THUMBQ.length) THUMBT=setTimeout(thumbFlush, 120);
 }
 function thumbObserve(){
- if(!("IntersectionObserver" in window)){
-  document.querySelectorAll("[data-thumb]").forEach(function(el){ thumbNeed(+el.dataset.thumb); });
-  return;
- }
- if(THUMBOBS) THUMBOBS.disconnect();
- THUMBOBS=new IntersectionObserver(function(es){
-  es.forEach(function(e){ if(e.isIntersecting){ thumbNeed(+e.target.dataset.thumb); THUMBOBS.unobserve(e.target); } });
- }, {rootMargin:"300px"});
- document.querySelectorAll("[data-thumb]").forEach(function(el){ THUMBOBS.observe(el); });
+ const els=[].slice.call(document.querySelectorAll("[data-thumb]"));
+ if(!els.length) return;
+ els.slice(0,400).forEach(function(el){ thumbNeed(+el.dataset.thumb); });
 }
 function pcard(x){
  const [t,cl]=SC[x.scope]||SC.non;
