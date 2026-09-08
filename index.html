@@ -2449,14 +2449,13 @@ function plLastCell(no, code, editable){
 }
 function impBadge(v){
  if(!v) return "";
- const C={S:"#DC2626",A:"#EA580C",B:"#2563EB",N:"#16A34A",C:"#9CA3AF",D:"#6B7280"};
- const T={S:"S \uB4F1\uAE09 \u00B7 Tari \uD310\uB9E4 \uCD5C\uC0C1\uC704",A:"A \uB4F1\uAE09 \u00B7 \uC0C1\uC704",B:"B \uB4F1\uAE09 \u00B7 \uC911\uC704",
-          N:"\uC2E0\uC81C\uD488",C:"C \uB4F1\uAE09 \u00B7 \uD558\uC704",D:"D \uB4F1\uAE09"};
+ const C={S:["#B91C1C","#FEE2E2"],A:["#C2410C","#FFEDD5"],B:["#1D4ED8","#DBEAFE"]};
+ const T={S:"S \uB4F1\uAE09 \u00B7 Tari \uD310\uB9E4 \uCD5C\uC0C1\uC704",A:"A \uB4F1\uAE09 \u00B7 \uC0C1\uC704",B:"B \uB4F1\uAE09"};
  const c=C[v]; if(!c) return "";
- return '<span title="'+(T[v]||v)+'" style="display:inline-flex;align-items:center;justify-content:center;'
-  +'width:16px;height:16px;border-radius:50%;background:'+c+';color:#fff;'
-  +'font-size:9.5px;font-weight:800;line-height:1;margin-right:5px;vertical-align:-2px;'
-  +'font-family:Arial,sans-serif;flex:none">'+v+'</span>';
+ return '<span title="'+(T[v]||v)+'" style="display:inline-block;min-width:15px;height:15px;line-height:15px;'
+  +'padding:0 3px;border-radius:3px;background:'+c[1]+';color:'+c[0]+';'
+  +'font-size:9px;font-weight:700;text-align:center;margin-right:5px;vertical-align:1px;'
+  +'font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;letter-spacing:0">'+v+'</span>';
 }
 function plStBadge(x, editable){
  const v=x.st||"";
