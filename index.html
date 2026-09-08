@@ -4419,8 +4419,15 @@ const CATID={"수산물":"SEA","밀키트·조리식품":"KIT","디저트":"DES"
 let nparsed=null;
 const added=[];
 /* ===== 브랜드 ===== */
+let BNOTE=null;
+async function loadBrandNotes(){
+ if(BNOTE) return;
+ BNOTE={};
+ try{ const r=await api({action:"brand_notes"}); BNOTE=r.notes||{}; drawBrand(); }catch(e){}
+}
 function drawBrand(){
  if(!$("#bGrid")) return;
+ if(BNOTE===null) loadBrandNotes();
  const BS={};
  D.items.forEach(x=>{ const b=BNM(x)||"(미지정)"; (BS[b]=BS[b]||[]).push(x); });
  const st=function(b){ const L=BS[b];
@@ -4471,12 +4478,13 @@ function drawBrand(){
      <div style="flex:none;width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:hsl(${hv},68%,95%);color:hsl(${hv},52%,38%);font-size:15px;font-weight:800">${E(ini)}</div>
      <div style="flex:1;min-width:0">
       <div style="font-size:13.5px;font-weight:700;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${E(b)}</div>
-      <div style="font-size:10px;color:#9CA3AF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${E(s2.subs.slice(0,2).join(" · "))||"—"}</div></div>
+      <div style="font-size:10px;color:#9CA3AF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${E((BNOTE&&BNOTE[b])||"")}">${E(s2.subs.slice(0,2).join(" · "))||"—"}</div></div>
      <div style="flex:none;font-size:17px;font-weight:800;color:#111827">${s2.n}</div>
     </div>
     <div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:8px;min-height:15px">
      ${badge("S",s2.s,"#FEE2E2","#B91C1C")}${badge("A",s2.a,"#FFEDD5","#C2410C")}${badge("B",s2.bb,"#DBEAFE","#1D4ED8")}
     </div>
+    ${(BNOTE&&BNOTE[b])?`<div style="font-size:10.5px;color:#6B7280;line-height:1.45;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${E(BNOTE[b])}</div>`:""}
     <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:#9CA3AF">
      ${bar(pct)}<span>단가 ${s2.np}/${s2.n}</span></div>
    </div>`; }).join("");
@@ -4491,7 +4499,7 @@ function drawBrand(){
     <div style="flex:none;width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:hsl(${hv},68%,95%);color:hsl(${hv},52%,38%);font-size:12px;font-weight:800">${E(ini)}</div>
     <div style="flex:1;min-width:0">
      <div style="font-size:12.5px;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${E(b)}</div>
-     <div style="font-size:9.5px;color:#9CA3AF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${E(s2.subs.slice(0,2).join(" · "))||"—"}</div></div>
+     <div style="font-size:9.5px;color:#9CA3AF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${E((BNOTE&&BNOTE[b])||"")}">${E((BNOTE&&BNOTE[b])||s2.subs.slice(0,2).join(" · ")||"—")}</div></div>
     <div style="flex:none;display:flex;gap:3px;width:96px;justify-content:flex-end">
      ${badge("S",s2.s,"#FEE2E2","#B91C1C")}${badge("A",s2.a,"#FFEDD5","#C2410C")}${badge("B",s2.bb,"#DBEAFE","#1D4ED8")}
     </div>
