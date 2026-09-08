@@ -586,6 +586,24 @@ body.pub #topOut, body.pub #sideOut{display:none!important}
 
  <section id="plan"><div class="wrap">
   <div class="kpis" id="plKpi"></div>
+  <div id="plLogBox" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(17,24,39,.45)" onclick="if(event.target===this)this.style.display='none'">
+   <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(760px,94vw);max-height:80vh;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.3);display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 17px;background:#1F2937;color:#fff">
+     <div><span style="font-size:13px;font-weight:700">수정 이력</span>
+      <span id="plLogTitle" style="font-size:12px;color:#9CA3AF;margin-left:8px"></span></div>
+     <button type="button" onclick="document.getElementById('plLogBox').style.display='none'" style="width:26px;height:26px;border-radius:6px;border:0;background:rgba(255,255,255,.15);color:#fff;cursor:pointer;font-size:14px">✕</button>
+    </div>
+    <div style="overflow:auto;flex:1">
+     <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="background:#F9FAFB;position:sticky;top:0">
+       <th style="padding:8px 9px;text-align:left;border-bottom:1px solid #E5E7EB;font-size:11px;color:#6B7280;white-space:nowrap">일시</th>
+       <th style="padding:8px 9px;text-align:left;border-bottom:1px solid #E5E7EB;font-size:11px;color:#6B7280;white-space:nowrap">구분</th>
+       <th style="padding:8px 9px;text-align:left;border-bottom:1px solid #E5E7EB;font-size:11px;color:#6B7280">내용</th>
+       <th style="padding:8px 9px;text-align:left;border-bottom:1px solid #E5E7EB;font-size:11px;color:#6B7280;white-space:nowrap">수정자</th>
+      </tr></thead><tbody id="plLogBody"></tbody></table>
+    </div>
+   </div>
+  </div>
   <div class="panel"><h3>납품구성 보드</h3>
    <p class="hint">왼쪽 대기 목록에서 카드를 끌어다 회차에 넣으세요. 회차 간 이동도 됩니다. 저장을 눌러야 서버에 반영됩니다.</p>
    <div class="bd">
@@ -2633,6 +2651,7 @@ function plCol(p){
     <div style="flex:none;min-width:150px">${title}</div>
     <span style="flex:none;font-size:11px;padding:3px 10px;border-radius:99px;background:${STG[p.status||"제안"][1]};color:${STG[p.status||"제안"][2]};white-space:nowrap;font-weight:600">${STG[p.status||"제안"][0]}</span>
     ${plPlanStSel(p, only)}
+    <button type="button" class="pllog" data-code="${code}" title="수정 이력" onclick="event.stopPropagation()" style="flex:none;width:22px;height:22px;border-radius:6px;border:1px solid #E5E7EB;background:#fff;color:#9CA3AF;font-size:11px;cursor:pointer;line-height:1">⏱</button>
     <span style="flex:none;font-size:11px;color:#9CA3AF;white-space:nowrap;min-width:140px">${p.confirm_date?E(p.confirm_date)+" 확정":(ld.etd?"ETD "+E(ld.etd):"")}</span>
     ${(canTab("plan")&&p.status!=="확정")?`<button type="button" class="pldel" data-code="${p.code}" title="회차 삭제" style="flex:none;width:24px;height:24px;border-radius:6px;border:1px solid #FECACA;background:#fff;color:#DC2626;font-size:12px;cursor:pointer">🗑</button>`:""}
     <div style="flex:1"></div>
@@ -2823,6 +2842,33 @@ function plBind(){
    const c=el.dataset.code; PLOPEN[c]=!(PLOPEN[c]===true); drawPlan();
   };
  });
+ document.querySelectorAll("button.pllog").forEach(function(el){
+  el.onmousedown=function(e){ e.stopPropagation(); };
+  el.onclick=async function(e){
+   e.stopPropagation();
+   const code=el.dataset.code;
+   const p=PLANS.find(function(z){return z.code===code});
+   try{
+    const r=await api({action:"plan_logs",code:code,limit:40});
+    const L=r.logs||[];
+    const box=$("#plLogBox"); if(!box) return;
+    $("#plLogTitle").textContent=(p&&p.label)||code;
+    $("#plLogBody").innerHTML = L.length
+     ? L.map(function(g){
+        const d=new Date(g.created_at);
+        const ts=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")+" "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+        const cnt=(g.before_count!=null&&g.after_count!=null)?(g.before_count+" → "+g.after_count+"건"):"";
+        const bad=(g.action==="저장거부");
+        return '<tr'+(bad?' style="background:#FEF2F2"':'')+'>'
+         +'<td style="padding:6px 9px;border-bottom:1px solid #F3F4F6;white-space:nowrap;color:#6B7280;font-size:11px">'+ts+'</td>'
+         +'<td style="padding:6px 9px;border-bottom:1px solid #F3F4F6;white-space:nowrap;font-weight:600;color:'+(bad?"#DC2626":"#111827")+'">'+E(g.action)+'</td>'
+         +'<td style="padding:6px 9px;border-bottom:1px solid #F3F4F6;color:#374151">'+E(g.detail||"")+(cnt?' <span style="color:#9CA3AF">('+cnt+')</span>':'')+'</td>'
+         +'<td style="padding:6px 9px;border-bottom:1px solid #F3F4F6;white-space:nowrap;color:#6B7280">'+E(g.by_user||"—")+'</td></tr>'; }).join("")
+     : '<tr><td colspan="4" style="padding:20px;text-align:center;color:#9CA3AF;font-size:12px">기록된 이력이 없습니다.</td></tr>';
+    box.style.display="";
+   }catch(err){ msg("#plMsg","이력 조회 실패 — "+err.message,1); }
+  };
+ });
  document.querySelectorAll("select.plstplan").forEach(function(el){
   el.onmousedown=function(e){ e.stopPropagation(); };
   el.onclick=function(e){ e.stopPropagation(); };
@@ -2845,6 +2891,13 @@ function plBind(){
      out += (PLQ[k]||[]).length;
      PLQ[k]=[];
     });
+    if(out){
+     try{ await api({action:"plan_save",code:code,
+       rows:(PLQ[plKey(code,v)]||[]).map(function(r,i){
+         return {row_no:r.no,pos:i,qty_plt:r.plt,qty_units:r.ea,unit_krw:r.unit,
+                 amount_krw:(r.ea&&r.unit)?r.ea*r.unit:null}; })}); PLDIRTY=false; }
+     catch(e2){}
+    }
     if(out) PLDIRTY=true;
     msg("#plMsg",(p.label||code)+" 보관을 "+v+"로 바꿨습니다."+(out?" 품목 "+out+"건이 대기 목록으로 빠졌습니다. 저장을 눌러 반영하세요.":""));
     drawPlan();
