@@ -1099,6 +1099,7 @@ function fromDB(p,base){
   cat:(p.category_l1||"")+(p.category_l2?" / "+p.category_l2:""),
   cdim:(p.case_l_mm&&p.case_w_mm&&p.case_h_mm)?`${p.case_l_mm}×${p.case_w_mm}×${p.case_h_mm} mm`:"",
   im:p.image_data||p.image_url||b.im||"", im2:p.image2_data||p.image2_url||b.im2||"",
+  hasImg:!!p.has_img, hasImg2:!!p.has_img2, hasDetail:!!p.has_detail,
   isNew:!!p.is_new, cdt:(p.created_at||"").slice(0,10),
   story:p.brand_story||"", full:p.desc_full||"", vari:p.variants||"", cook:p.cooking||"",
   nutri:p.nutrition||"", certs:p.certs||[], claims:p.label_claims||"", extra:p.extra_note||"", links:p.links||"",
@@ -1851,8 +1852,31 @@ drawP();
 if($("#edxls")) $("#edxls").onclick=exportEdited;
 
 /* ---- drawer ---- */
+async function loadDetail(no){
+ const x=D.items.find(function(i){return i.no===no}); if(!x) return;
+ if(x.__d) return;
+ if(!x.hasImg && !x.hasImg2 && !x.hasDetail){ x.__d=1; return; }
+ try{
+  const r=await api({action:"product_detail",row_no:no});
+  const d=r.detail||{};
+  if(d.image_data) x.im=d.image_data;
+  if(d.image2_data) x.im2=d.image2_data;
+  if(d.desc_full) x.full=d.desc_full;
+  if(d.selling_points) x.sell=d.selling_points;
+  if(d.brand_story) x.story=d.brand_story;
+  if(d.cooking) x.cook=d.cooking;
+  if(d.nutrition) x.nutri=d.nutrition;
+  if(d.variants) x.vari=d.variants;
+  if(d.links) x.links=d.links;
+  if(d.internal_note) x.note=d.internal_note;
+  x.__d=1;
+ }catch(e){ x.__d=1; }
+}
 function open_(no){
  const x=D.items.find(i=>i.no===no);
+ if(x && !x.__d && (x.hasImg||x.hasImg2||x.hasDetail)){
+  loadDetail(no).then(function(){ if($("#dw").classList.contains("on")) open_(no); });
+ }
  $("#dNo").textContent=`NO.${String(x.no).padStart(2,"0")} · ${BNM(x)} · ${x.sub||"-"}`+(x.isNew?" · 신규 등록":"");
  $("#dKo").textContent=x.ko; $("#dEn").textContent=x.en;
  const R=(a,b)=>`<tr><td>${a}</td><td class="${b?"":"tbc"}">${E(b||"TBC")}</td></tr>`;
