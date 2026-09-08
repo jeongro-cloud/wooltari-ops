@@ -2422,7 +2422,7 @@ const DCOL={req:"#6B7280",sea:"#0F766E",mmpa:"#DC2626",liv:"#7C3AED"};
 drawReg();
 
 /* ===== 납품구성 보드 ===== */
-let PLANS=[], PLQ={}, PLDIRTY=false, PLSEL=null, LEGS={}, DEFAULTS=[], POOLOPEN=false, PLOPEN={}, PLADD={}, PLFOCUS=null;
+let PLANS=[], PLQ={}, PLDIRTY=false, PLSEL=null, LEGS={}, DEFAULTS=[], POOLOPEN=false, PLOPEN={}, PLADD={}, PLFOCUS=null, PLKEEP=null;
 const PLPOOL="__pool", PLST=["냉장","냉동","상온"];
 function plItem(no){ return D.items.find(x=>x.no===no); }
 const STG={"제안":["제품제안","#EFF6FF","#1D4ED8"],"협의":["제품협의","#FEF3C7","#B45309"],"확정":["납품확정","#DCFCE7","#15803D"]};
@@ -2589,8 +2589,8 @@ function plAddRowBind(){
    if(PLQ[k].some(function(z){return z.no===no})){ msg("#plMsg","이미 담겨 있습니다.",1); return; }
    PLQ[k].push({no:no, plt:null, ea:null, unit:null});
    PLDIRTY=true;
-   const p=PLANS.find(function(z){return z.code===code});
    msg("#plMsg","#"+no+" "+x.ko+" 추가 — 저장을 눌러 반영하세요.");
+   PLKEEP=code+"|"+st;
    drawPlan();
   };
  });
@@ -2700,6 +2700,12 @@ function drawPlan(){
  };
  restore();
  requestAnimationFrame(restore);
+ if(PLKEEP){
+  const c=PLKEEP.split("|")[0], s2=PLKEEP.split("|")[1];
+  const f=document.querySelector('input.pladd[data-code="'+c+'"][data-st="'+s2+'"]');
+  if(f){ const v=f.value; try{ f.focus(); f.setSelectionRange(v.length,v.length); }catch(e){} }
+  PLKEEP=null;
+ }
 }
 function __drawPlanBody(){
  const cats=D.cats.filter(function(c){return D.items.some(function(x){return x.c1===c.id})});
