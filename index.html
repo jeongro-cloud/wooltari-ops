@@ -1165,6 +1165,19 @@ function toDB(x){
   remarks:x.rem||null, product_url:x.url||null};
 }
 /* 서버에서 제품 로드 (없으면 마스터가 최초 시딩) */
+async function preloadNewThumbs(){
+ try{
+  const L=(D.items||[]).filter(function(x){return x.isNew && x.hasImg && !x.im});
+  if(!L.length) return;
+  const rows=L.map(function(x){return x.no}).slice(0,40);
+  const r=await api({action:"thumbs",rows:rows});
+  const m=r.thumbs||{};
+  Object.keys(m).forEach(function(k){
+   const x=D.items.find(function(z){return String(z.no)===String(k)});
+   if(x && !x.im) x.im=m[k];
+  });
+ }catch(e){}
+}
 async function loadProducts(){
  const base={}; D.items.forEach(x=>base[x.no]=x);
  let r=await api({action:"products"});
@@ -1189,6 +1202,7 @@ async function loadProducts(){
   SERVER_OK=true;
  }
  return D.items.length;
+ await preloadNewThumbs();
 }
 let SERVER_OK=false, OFFLINE=false;
 
