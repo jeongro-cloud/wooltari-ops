@@ -2603,7 +2603,7 @@ function plCard(r,locked,editable,code,st){
   <td style="${td};text-align:center;width:58px">${plStBadge(x, editable)}</td>
   <td style="${td};color:#6B7280;font-variant-numeric:tabular-nums;width:110px">${E(x.ean||"—")}</td>
   <td style="${td};text-align:right;width:64px">${x.upc||"—"}</td>
-  <td style="${td};text-align:right;width:70px">${box!=null?box.toLocaleString():"—"}</td>
+  <td style="${td};width:70px">${editable?inp("cs",box,"0"):`<div style="text-align:right">${box!=null?box.toLocaleString():"—"}</div>`}</td>
   <td style="${td};width:72px">${editable?inp("plt",r.plt,"0"):`<div style="text-align:right">${r.plt!=null?r.plt:"—"}</div>`}</td>
   <td style="${td};width:86px">${editable?inp("ea",r.ea,"0"):`<div style="text-align:right">${(r.ea||0).toLocaleString()}</div>`}</td>
   <td style="${td};width:86px">${editable?inp("unit",r.unit==null?(x.pkrw||""):r.unit,"원"):`<div style="text-align:right">${unit.toLocaleString()}</div>`}</td>
@@ -3132,6 +3132,9 @@ function plBind(){
    const x=plItem(no), upp=plUPP(x,R);
    if(f==="plt"){ if(v==null){ R.ea=null; } else if(upp){ R.ea=Math.round(v*upp); } }
    if(f==="ea"){ if(v==null){ R.plt=null; } else if(upp){ R.plt=Math.round(v/upp*100)/100; } else if(R.plt){ R.upl=Math.round(v/R.plt); } }
+   if(f==="cs"){ delete R.cs;
+    if(v==null){ R.ea=null; R.plt=null; }
+    else if(x&&x.upc){ R.ea=Math.round(v*x.upc); if(upp) R.plt=Math.round(R.ea/upp*100)/100; } }
    if(f!=="amt"){ const u=plUnit(R); R.amt=(u&&R.ea!=null)?Math.round(u*R.ea):null; }
    PLDIRTY=true; msg("#plMsg","변경됨 — 저장을 눌러주세요."); drawPlan();
   };
