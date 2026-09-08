@@ -2567,6 +2567,28 @@ function plPool(){
  if(el) el.textContent = (q||c||st||im) ? (out.length+"건 / 전체 "+all.length+"건") : ("전체 "+all.length+"건");
  return out.map(x=>({no:x.no}));
 }
+function plLastEdit(p){
+ if(!p || !p.last_at) return "";
+ const d=new Date(p.last_at);
+ const now=new Date();
+ const diff=Math.floor((now-d)/60000);
+ let when;
+ if(diff<1) when="방금";
+ else if(diff<60) when=diff+"분 전";
+ else if(diff<1440) when=Math.floor(diff/60)+"시간 전";
+ else {
+  const sameYear = d.getFullYear()===now.getFullYear();
+  when=(sameYear?"":d.getFullYear()+".")+(d.getMonth()+1)+"."+d.getDate();
+ }
+ const who=String(p.last_by||"").replace(/\s*\([^)]*\)\s*$/,"") || "—";
+ const full=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")
+   +" "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")
+   +" · "+(p.last_action||"")+(p.last_detail?" · "+p.last_detail:"")+(p.last_by?" · "+p.last_by:"");
+ return '<span title="'+E(full)+'" style="flex:none;font-size:10.5px;color:#9CA3AF;white-space:nowrap;display:inline-flex;align-items:center;gap:4px">'
+  +'<span style="color:#D1D5DB">|</span>'
+  +'<span style="color:#6B7280;font-weight:600">'+E(who)+'</span>'
+  +'<span>'+E(when)+' 수정</span></span>';
+}
 function plPlanStSel(p, only){
  const bg = only==="냉동" ? "#EFF6FF" : (only==="냉장" ? "#F0FDFA" : "#FFFBEB");
  const fg = only==="냉동" ? "#1D4ED8" : (only==="냉장" ? "#0F766E" : "#B45309");
@@ -2693,6 +2715,7 @@ function plCol(p){
     <span style="flex:none;font-size:11px;padding:3px 10px;border-radius:99px;background:${STG[p.status||"제안"][1]};color:${STG[p.status||"제안"][2]};white-space:nowrap;font-weight:600">${STG[p.status||"제안"][0]}</span>
     ${plPlanStSel(p, only)}
     <button type="button" class="pllog" data-code="${code}" title="수정 이력" onclick="event.stopPropagation()" style="flex:none;width:22px;height:22px;border-radius:6px;border:1px solid #E5E7EB;background:#fff;color:#9CA3AF;font-size:11px;cursor:pointer;line-height:1">⏱</button>
+    ${plLastEdit(p)}
     <span style="flex:none;font-size:11px;color:#9CA3AF;white-space:nowrap;min-width:140px">${p.confirm_date?E(p.confirm_date)+" 확정":(ld.etd?"ETD "+E(ld.etd):"")}</span>
     ${(canTab("plan")&&p.status!=="확정")?`<button type="button" class="pldel" data-code="${p.code}" title="회차 삭제" style="flex:none;width:24px;height:24px;border-radius:6px;border:1px solid #FECACA;background:#fff;color:#DC2626;font-size:12px;cursor:pointer">🗑</button>`:""}
     <div style="flex:1"></div>
