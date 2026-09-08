@@ -2449,11 +2449,11 @@ function plLastCell(no, code, editable){
 }
 function impBadge(v){
  if(!v) return "";
- const C={S:["#FEE2E2","#DC2626"],A:["#FEF3C7","#B45309"],B:["#DBEAFE","#1D4ED8"],
-          N:["#DCFCE7","#15803D"],C:["#F3F4F6","#6B7280"],D:["#F3F4F6","#9CA3AF"]};
- const c=C[v]||["#F3F4F6","#9CA3AF"];
- const t=(v==="N")?"신규":v;
- return '<span style="display:inline-block;padding:1px 6px;border-radius:4px;background:'+c[0]+';color:'+c[1]+';font-size:9.5px;font-weight:800;margin-right:5px;vertical-align:1px;letter-spacing:.3px">'+t+'</span>';
+ const M={S:"\uD83D\uDD34S",A:"\uD83D\uDFE0A",B:"\uD83D\uDD35B",N:"\uD83D\uDFE2N",C:"\u26AAC",D:"\u26ABD"};
+ const T={S:"S \uB4F1\uAE09 \u00B7 Tari \uD310\uB9E4 \uCD5C\uC0C1\uC704",A:"A \uB4F1\uAE09 \u00B7 \uC0C1\uC704",B:"B \uB4F1\uAE09 \u00B7 \uC911\uC704",
+          N:"\uC2E0\uC81C\uD488",C:"C \uB4F1\uAE09 \u00B7 \uD558\uC704",D:"D \uB4F1\uAE09"};
+ const t=M[v]; if(!t) return "";
+ return '<span title="'+(T[v]||v)+'" style="margin-right:5px;font-size:10.5px;font-weight:800;white-space:nowrap">'+t+'</span>';
 }
 function plStBadge(x, editable){
  const v=x.st||"";
