@@ -4509,7 +4509,7 @@ function drawBrand(){
   c.onmouseover=function(){ c.style.background="#F9FAFB"; };
   c.onmouseout=function(){ c.style.background="#fff"; };
  });
- $("#bGrid .cat, #bGrid .brow").forEach(c=>c.onclick=()=>{
+ $$("#bGrid .cat, #bGrid .brow").forEach(c=>c.onclick=()=>{
   if(ME&&ME.role==="master"){ go("prod"); const fb=$("#fb"); if(fb){ fb.value=c.dataset.b; drawP(); } } else { go("cat"); }
  });
  const rows=[];
