@@ -3096,7 +3096,23 @@ async function loadPlans(){
   PLDIRTY=false; drawPlan(); try{drawShip()}catch(e){} try{mlOpts();mlSups()}catch(e){} try{drawMarg()}catch(e){} try{drawDf()}catch(e){}
  }catch(e){ msg("#plMsg","불러오기 실패 — "+e.message,1); }
 }
-if($("#plSave")) $("#plSave").onclick=async function(){ if(!canTab("plan")){ msg("#plMsg","납품구성 권한이 없습니다.",1); return; } try{ for(const p of PLANS){ if(p.status==="확정") continue; let rows=[]; PLST.forEach(function(st){ plList(p.code,st).forEach(function(r){ rows.push({row_no:r.no,pos:rows.length,qty_plt:r.plt,qty_units:r.ea,unit_krw:r.unit,amount_krw:r.amt}); }); }); await api({action:"plan_save",code:p.code,rows:rows}); } PLDIRTY=false; msg("#plMsg","저장했습니다. 선적확정에 반영되었습니다."); try{drawShip()}catch(e){} }catch(e){ msg("#plMsg","저장 실패 — "+e.message,1); } };
+if($("#plSave")) $("#plSave").onclick=async function(){
+ if(!canTab("plan")){ msg("#plMsg","납품구성 권한이 없습니다.",1); return; }
+ let okN=0, skip=0; const fails=[];
+ for(const p of PLANS){
+  if(p.status==="확정") continue;
+  let rows=[];
+  PLST.forEach(function(st){ plList(p.code,st).forEach(function(r){
+   rows.push({row_no:r.no,pos:rows.length,qty_plt:r.plt,qty_units:r.ea,unit_krw:r.unit,amount_krw:r.amt}); }); });
+  if(!rows.length){ skip++; continue; }
+  try{ await api({action:"plan_save",code:p.code,rows:rows}); okN++; }
+  catch(e){ fails.push((p.label||p.code)+": "+e.message); }
+ }
+ PLDIRTY = fails.length>0;
+ if(fails.length) msg("#plMsg","일부 저장 실패 — "+fails.join(" / "),1);
+ else msg("#plMsg","저장 완료 — "+okN+"개 회차"+(skip?" (빈 회차 "+skip+"개 건너뜀)":"")+". 선적확정에 반영되었습니다.");
+ try{drawShip()}catch(e){}
+};
 /* ===== 출납 처리 ===== */
 let SETT=[];
 function drawSett(){
