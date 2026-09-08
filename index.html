@@ -1101,7 +1101,7 @@ const SCODE={"신규":"new","인기":"hot","단종":"eol","위험물":"dg","판�
 function fromDB(p,base){
  const b=base||{};
  return Object.assign({},b,{
-  id:p.id, no:p.row_no, bn:p.brand, c1:L1ID[p.category_l1]||"ETC", sub:p.category_l2||"",
+  id:p.id, dbId:p.id, no:p.row_no, bn:p.brand, c1:L1ID[p.category_l1]||"ETC", sub:p.category_l2||"",
   imp:p.importance||"",
   ko:p.name_ko, en:p.name_en||"", status:p.status_tag||"", scode:SCODE[p.status_tag]||"",
   wt:p.net_weight||"", org:p.origin||"", st:p.storage||"", shelf:p.shelf_life||"",
