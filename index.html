@@ -452,6 +452,18 @@ body.pub #topOut, body.pub #sideOut{display:none!important}
 
  <section id="dash" class="on"><div class="wrap">
   <div class="kpis" id="kpi" style="position:sticky;top:81px;z-index:19;background:var(--bg);padding:10px 0"></div>
+  <div class="panel" id="recPanel" style="display:none;border-left:3px solid #2563EB">
+   <h3>바이어 추천 <span id="recMeta" style="font-size:12px;color:#6B7280;font-weight:500;margin-left:6px"></span></h3>
+   <p class="hint">울타리몰(미국) 최근 판매 실적을 기준으로 점수화한 목록입니다. 판매량·매출·판매 지속일을 반영하고 반품률은 감점합니다.</p>
+   <div class="bd">
+    <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
+     <button type="button" class="recSt on" data-st="" style="padding:6px 14px;border-radius:7px;border:1px solid #E5E7EB;background:#1F2937;color:#fff;font-size:12px;font-weight:600;cursor:pointer">전체</button>
+     <button type="button" class="recSt" data-st="냉동" style="padding:6px 14px;border-radius:7px;border:1px solid #E5E7EB;background:#fff;color:#374151;font-size:12px;font-weight:600;cursor:pointer">❄ 냉동</button>
+     <button type="button" class="recSt" data-st="냉장" style="padding:6px 14px;border-radius:7px;border:1px solid #E5E7EB;background:#fff;color:#374151;font-size:12px;font-weight:600;cursor:pointer">🧊 냉장</button>
+     <button type="button" class="recSt" data-st="상온" style="padding:6px 14px;border-radius:7px;border:1px solid #E5E7EB;background:#fff;color:#374151;font-size:12px;font-weight:600;cursor:pointer">☀ 상온</button>
+    </div>
+    <div id="recBox"></div>
+   </div></div>
   <div class="panel" id="gradePanel" style="display:none;border-left:3px solid #F59E0B">
    <h3>등급 재검토 <span id="gradeCnt" style="font-size:12px;color:#B45309;font-weight:600;margin-left:6px"></span></h3>
    <p class="hint">신규(N) 등록 후 30일이 지난 제품입니다. Tari 판매 실적을 확인해 S·A·B 등급으로 바꿔주세요.</p>
@@ -1692,6 +1704,49 @@ const hi=D.items.filter(x=>x.hi).length;
 const aqua=D.items.filter(x=>x.scope==="aqua").length;
 let REGION=(function(){ try{return localStorage.getItem("wooltari_region")==="US"?"US":"AU"}catch(_){return "AU"} })();
 const BIOSEC=["SEA","GRN"];
+let RECST="", RECDATA=null;
+async function drawRec(){
+ const p=$("#recPanel"), box=$("#recBox"); if(!p||!box) return;
+ try{
+  const r=await api({action:"recommend",storage:RECST||null,limit:12});
+  RECDATA=r;
+  const L=r.items||[];
+  if(!L.length && !RECST){ p.style.display="none"; return; }
+  p.style.display="";
+  const dt=r.refreshed? new Date(r.refreshed) : null;
+  $("#recMeta").textContent = (dt? dt.getFullYear()+"."+(dt.getMonth()+1)+"."+dt.getDate()+" 기준" : "")
+   + (r.total? " · 분석 "+r.total+"개 품목" : "");
+  if(!L.length){ box.innerHTML='<div style="padding:26px;text-align:center;color:#9CA3AF;font-size:12.5px">해당 보관 구분에 추천할 실적 데이터가 없습니다.</div>'; return; }
+  const mx=Math.max.apply(null,L.map(function(x){return +x.score||0}))||1;
+  box.innerHTML='<div style="border:1px solid #E5E7EB;border-radius:10px;overflow:hidden;background:#fff">'
+   + L.map(function(x,i){
+    const pct=Math.round((+x.score||0)/mx*100);
+    const st=x.storage==="냉동"?["#EFF6FF","#1D4ED8","❄"]:(x.storage==="냉장"?["#F0FDFA","#0F766E","🧊"]:["#FFFBEB","#B45309","☀"]);
+    const im=x.image_url||"";
+    return '<div class="recrow" data-no="'+x.row_no+'" style="display:flex;align-items:center;gap:13px;padding:11px 15px;border-bottom:1px solid #F3F4F6;cursor:pointer;background:#fff">'
+     +'<span style="flex:none;width:22px;font-size:13px;font-weight:800;color:'+(i<3?"#B45309":"#D1D5DB")+'">'+(i+1)+'</span>'
+     +(im?'<img src="'+im+'" style="flex:none;width:40px;height:40px;object-fit:cover;border-radius:7px">'
+        :'<div data-thumb="'+x.row_no+'" style="flex:none;width:40px;height:40px;border-radius:7px;background:#F3F4F6"></div>')
+     +'<div style="flex:1;min-width:0">'
+     +'<div style="font-size:13px;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
+     + impBadge(x.importance) + E(x.name_ko||"") +'</div>'
+     +'<div style="font-size:10.5px;color:#9CA3AF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+E(x.reason||x.brand||"")+'</div></div>'
+     +'<span style="flex:none;padding:2px 8px;border-radius:99px;background:'+st[0]+';color:'+st[1]+';font-size:10px;font-weight:700;white-space:nowrap">'+st[2]+' '+E(x.storage||"")+'</span>'
+     +'<div style="flex:none;width:74px;text-align:right;font-size:11px;color:#6B7280">'
+     +'<div style="font-weight:700;color:#111827">'+(x.sold_30d||0).toLocaleString()+'</div><div style="font-size:9.5px">30일 판매</div></div>'
+     +'<div style="flex:none;width:56px;display:flex;flex-direction:column;align-items:flex-end;gap:3px">'
+     +'<span style="font-size:12px;font-weight:800;color:#1D4ED8">'+(+x.score||0).toFixed(0)+'</span>'
+     +'<span style="display:block;width:46px;height:4px;border-radius:99px;background:#F3F4F6;overflow:hidden"><span style="display:block;height:100%;width:'+pct+'%;background:#2563EB"></span></span></div>'
+     +'</div>'; }).join("")
+   + '</div>';
+  box.querySelectorAll(".recrow").forEach(function(el){
+   el.onmouseover=function(){ el.style.background="#F9FAFB"; };
+   el.onmouseout=function(){ el.style.background="#fff"; };
+   el.onclick=function(){ try{ open_(+el.dataset.no); }catch(e){} };
+  });
+  try{ box.querySelectorAll("[data-thumb]").forEach(function(el){ thumbNeed(+el.dataset.thumb, true); }); }catch(e){}
+ }catch(e){ p.style.display="none"; }
+}
 let GREV=null;
 async function loadGradeReview(){
  try{ GREV=await api({action:"grade_review"}); drawGradeReview(); }catch(e){}
@@ -1765,6 +1820,20 @@ function drawNew(){
  try{ box.querySelectorAll("[data-thumb]").forEach(function(el){ thumbNeed(+el.dataset.thumb, true); }); }catch(e){}
  try{ thumbObserve(); }catch(e){}
  try{ drawGradeReview(); }catch(e){}
+ try{
+  document.querySelectorAll("button.recSt").forEach(function(el){
+   if(el.dataset.on) return; el.dataset.on="1";
+   el.onclick=function(){
+    RECST=el.dataset.st||"";
+    document.querySelectorAll("button.recSt").forEach(function(z){
+     const on=(z.dataset.st||"")===RECST;
+     z.style.background=on?"#1F2937":"#fff"; z.style.color=on?"#fff":"#374151";
+    });
+    drawRec();
+   };
+  });
+  drawRec();
+ }catch(e){}
 }
 function drawKPI(){
  const it=D.items;
