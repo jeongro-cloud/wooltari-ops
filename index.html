@@ -454,7 +454,7 @@ body.pub #topOut, body.pub #sideOut{display:none!important}
   <div class="kpis" id="kpi" style="position:sticky;top:81px;z-index:19;background:var(--bg);padding:10px 0"></div>
   <div class="panel" id="recPanel" style="display:none;border-left:3px solid #2563EB">
    <h3>바이어 추천 <span id="recMeta" style="font-size:12px;color:#6B7280;font-weight:500;margin-left:6px"></span></h3>
-   <p class="hint">울타리몰(미국) 최근 판매 실적을 기준으로 점수화한 목록입니다. 판매량·매출·판매 지속일을 반영하고 반품률은 감점합니다.</p>
+   <p class="hint">울타리몰(미국)에서 잘 팔리는 흐름을 참고용으로 정리했습니다. 호주 시장은 수요가 다를 수 있으니 선택 가이드로만 활용해 주세요.</p>
    <div class="bd">
     <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
      <button type="button" class="recSt on" data-st="" style="padding:6px 14px;border-radius:7px;border:1px solid #E5E7EB;background:#1F2937;color:#fff;font-size:12px;font-weight:600;cursor:pointer">전체</button>
@@ -1714,29 +1714,29 @@ async function drawRec(){
   if(!L.length && !RECST){ p.style.display="none"; return; }
   p.style.display="";
   const dt=r.refreshed? new Date(r.refreshed) : null;
-  $("#recMeta").textContent = (dt? dt.getFullYear()+"."+(dt.getMonth()+1)+"."+dt.getDate()+" 기준" : "")
-   + (r.total? " · 분석 "+r.total+"개 품목" : "");
-  if(!L.length){ box.innerHTML='<div style="padding:26px;text-align:center;color:#9CA3AF;font-size:12.5px">해당 보관 구분에 추천할 실적 데이터가 없습니다.</div>'; return; }
-  const mx=Math.max.apply(null,L.map(function(x){return +x.score||0}))||1;
+  $("#recMeta").textContent = dt? (dt.getFullYear()+"."+(dt.getMonth()+1)+"."+dt.getDate()+" 기준") : "";
+  if(!L.length){ box.innerHTML='<div style="padding:26px;text-align:center;color:#9CA3AF;font-size:12.5px">해당 보관 구분은 참고할 실적이 아직 없습니다.</div>'; return; }
+  const tag=function(t,bg,fg){ return '<span style="padding:2px 8px;border-radius:99px;background:'+bg+';color:'+fg+';font-size:10.5px;font-weight:700;white-space:nowrap">'+t+'</span>'; };
   box.innerHTML='<div style="border:1px solid #E5E7EB;border-radius:10px;overflow:hidden;background:#fff">'
    + L.map(function(x,i){
-    const pct=Math.round((+x.score||0)/mx*100);
     const st=x.storage==="냉동"?["#EFF6FF","#1D4ED8","❄"]:(x.storage==="냉장"?["#F0FDFA","#0F766E","🧊"]:["#FFFBEB","#B45309","☀"]);
     const im=x.image_url||"";
-    return '<div class="recrow" data-no="'+x.row_no+'" style="display:flex;align-items:center;gap:13px;padding:11px 15px;border-bottom:1px solid #F3F4F6;cursor:pointer;background:#fff">'
-     +'<span style="flex:none;width:22px;font-size:13px;font-weight:800;color:'+(i<3?"#B45309":"#D1D5DB")+'">'+(i+1)+'</span>'
+    const tr = x.trend==="상승" ? tag("↗ 상승세","#DCFCE7","#15803D")
+            : (x.trend==="둔화" ? tag("↘ 둔화","#F3F4F6","#9CA3AF") : "");
+    const vol = x.vol==="많음" ? tag("판매 많음","#FEE2E2","#B91C1C")
+             : (x.vol==="보통" ? tag("판매 보통","#FEF3C7","#B45309") : "");
+    const sd = x.steady==="매일 팔림" ? tag("매일 팔림","#EFF6FF","#1D4ED8") : "";
+    const rf = x.ret_flag ? tag("반품 확인","#FEF2F2","#DC2626") : "";
+    return '<div class="recrow" data-no="'+x.row_no+'" style="display:flex;align-items:center;gap:13px;padding:12px 15px;border-bottom:1px solid #F3F4F6;cursor:pointer;background:#fff">'
+     +'<span style="flex:none;width:20px;font-size:13px;font-weight:800;color:'+(i<3?"#B45309":"#D1D5DB")+'">'+(i+1)+'</span>'
      +(im?'<img src="'+im+'" style="flex:none;width:40px;height:40px;object-fit:cover;border-radius:7px">'
         :'<div data-thumb="'+x.row_no+'" style="flex:none;width:40px;height:40px;border-radius:7px;background:#F3F4F6"></div>')
      +'<div style="flex:1;min-width:0">'
      +'<div style="font-size:13px;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
      + impBadge(x.importance) + E(x.name_ko||"") +'</div>'
-     +'<div style="font-size:10.5px;color:#9CA3AF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+E(x.reason||x.brand||"")+'</div></div>'
+     +'<div style="font-size:10.5px;color:#9CA3AF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+E(x.brand||"")+(x.category_l2?" · "+E(x.category_l2):"")+'</div></div>'
+     +'<div style="flex:none;display:flex;gap:4px;align-items:center;flex-wrap:nowrap">'+vol+tr+sd+rf+'</div>'
      +'<span style="flex:none;padding:2px 8px;border-radius:99px;background:'+st[0]+';color:'+st[1]+';font-size:10px;font-weight:700;white-space:nowrap">'+st[2]+' '+E(x.storage||"")+'</span>'
-     +'<div style="flex:none;width:74px;text-align:right;font-size:11px;color:#6B7280">'
-     +'<div style="font-weight:700;color:#111827">'+(x.sold_30d||0).toLocaleString()+'</div><div style="font-size:9.5px">30일 판매</div></div>'
-     +'<div style="flex:none;width:56px;display:flex;flex-direction:column;align-items:flex-end;gap:3px">'
-     +'<span style="font-size:12px;font-weight:800;color:#1D4ED8">'+(+x.score||0).toFixed(0)+'</span>'
-     +'<span style="display:block;width:46px;height:4px;border-radius:99px;background:#F3F4F6;overflow:hidden"><span style="display:block;height:100%;width:'+pct+'%;background:#2563EB"></span></span></div>'
      +'</div>'; }).join("")
    + '</div>';
   box.querySelectorAll(".recrow").forEach(function(el){
