@@ -2764,7 +2764,7 @@ function plAddBar(code,st){
  return '<div style="border:1px solid #E5E7EB;border-top:0;border-radius:0 0 8px 8px;overflow:hidden">'
   + '<div style="display:flex;align-items:center;gap:8px;padding:8px 11px;background:#F9FAFB">'
   + '<span style="font-size:11.5px;color:#6B7280;font-weight:600;flex:none">+ 제품 추가</span>'
-  + '<input class="pladd" data-code="'+code+'" data-st="'+st+'" value="'+E(PLADD[key]||"")+'" placeholder="제품명·브랜드·바코드로 검색 ('+st+' 보관만)" style="flex:1;padding:6px 10px;font-size:12px;border:1px solid #E5E7EB;border-radius:6px">'
+  + '<input class="pladd" data-code="'+code+'" data-st="'+st+'" value="'+E(PLADD[key]||"")+'" placeholder="제품명·브랜드·바코드로 검색 (전체 제품)" style="flex:1;padding:6px 10px;font-size:12px;border:1px solid #E5E7EB;border-radius:6px">'
   + (q?'<button type="button" class="pladdx" data-code="'+code+'" data-st="'+st+'" style="flex:none;padding:5px 9px;font-size:11px;border:1px solid #E5E7EB;background:#fff;border-radius:6px;cursor:pointer;color:#6B7280">지우기</button>':"")
   + '</div><div class="pladdlist" data-key="'+key+'">'+plAddList(code,st)+'</div></div>';
 }
@@ -2773,16 +2773,25 @@ function plAddList(code,st){
  if(!q) return "";
  const used=new Set(); Object.keys(PLQ).forEach(function(k){PLQ[k].forEach(function(r){used.add(r.no)})});
  const ql=q.toLowerCase();
- const hit=D.items.filter(function(x){ return !used.has(x.no) && plStorage(x)===st; })
+ const hit=D.items.filter(function(x){ return !used.has(x.no); })
   .filter(function(x){ return (x.ko+" "+(x.en||"")+" "+(BNM(x)||"")+" "+(x.ean||"")).toLowerCase().indexOf(ql)>=0; });
+ hit.sort(function(a,b){
+  const sa=(plStorage(a)===st)?0:1, sb=(plStorage(b)===st)?0:1;
+  if(sa!==sb) return sa-sb;
+  const IR={S:0,A:1,B:2,N:3};
+  return (IR[a.imp]!=null?IR[a.imp]:9)-(IR[b.imp]!=null?IR[b.imp]:9) || a.no-b.no;
+ });
  const show=hit.slice(0,12);
- if(!show.length) return '<div style="padding:10px 11px;border:1px solid #E5E7EB;border-top:0;background:#fff;font-size:11.5px;color:#9CA3AF;text-align:center">'+E(q)+' · '+st+' 보관 제품 중 결과가 없습니다</div>';
+ if(!show.length) return '<div style="padding:10px 11px;border:1px solid #E5E7EB;border-top:0;background:#fff;font-size:11.5px;color:#9CA3AF;text-align:center">'+E(q)+' 검색 결과가 없습니다</div>';
  return '<div style="max-height:260px;overflow:auto;border:1px solid #E5E7EB;border-top:0;background:#fff">'
   + show.map(function(x){
      return '<div class="pladdrow" data-no="'+x.no+'" data-code="'+code+'" data-st="'+st+'" style="display:flex;align-items:center;gap:9px;padding:7px 11px;border-bottom:1px solid #F3F4F6;cursor:pointer;font-size:12px;background:#fff">'
       + (x.im?'<img src="'+x.im+'" style="width:30px;height:30px;object-fit:cover;border-radius:5px;flex:none">':'<div style="width:30px;height:30px;border-radius:5px;background:#F3F4F6;flex:none"></div>')
       + '<div style="flex:1;min-width:0"><div style="font-weight:600;color:#111827">'+impBadge(x.imp)+E(x.ko)+'</div>'
       + '<div style="font-size:10.5px;color:#9CA3AF">'+E(BNM(x)||"")+(x.wt?" · "+E(x.wt):"")+(x.ean?" · "+E(x.ean):"")+'</div></div>'
+      + (function(){ const xs=plStorage(x); const diff=(xs!==st);
+          const c = xs==="냉동"?["#EFF6FF","#1D4ED8","❄"]:(xs==="냉장"?["#F0FDFA","#0F766E","🧊"]:["#FFFBEB","#B45309","☀"]);
+          return '<span title="'+(diff?"이 회차는 "+st+" 구역입니다":"")+'" style="flex:none;padding:1px 7px;border-radius:99px;background:'+c[0]+';color:'+c[1]+';font-size:10px;font-weight:700;white-space:nowrap'+(diff?';border:1px solid '+c[1]:'')+'">'+c[2]+' '+E(xs)+(diff?' ⚠':'')+'</span>'; })()
       + '<span style="flex:none;font-size:11px;color:#B45309;font-weight:700">'+(x.pkrw?KRW(x.pkrw):"단가 없음")+'</span>'
       + '<span style="flex:none;color:#1D4ED8;font-weight:700;font-size:15px">+</span></div>';
     }).join("")
@@ -2806,9 +2815,11 @@ function plAddRowBind(){
    const k=plKey(code,st);
    PLQ[k]=PLQ[k]||[];
    if(PLQ[k].some(function(z){return z.no===no})){ msg("#plMsg","이미 담겨 있습니다.",1); return; }
+   const xs=plStorage(x);
+   if(xs!==st && !confirm("["+no+"] "+x.ko+"\n\n이 제품은 "+xs+" 보관입니다.\n"+st+" 구역에 담을까요?\n\n혼적이 가능한지 확인 후 진행해 주세요.")) return;
    PLQ[k].push({no:no, plt:null, ea:null, unit:null});
    PLDIRTY=true;
-   msg("#plMsg","#"+no+" "+x.ko+" 추가 — 저장을 눌러 반영하세요.");
+   msg("#plMsg","#"+no+" "+x.ko+" 추가"+(xs!==st?" ("+xs+" → "+st+" 구역)":"")+" — 저장을 눌러 반영하세요.");
    PLKEEP=code+"|"+st;
    drawPlan();
   };
