@@ -1746,11 +1746,11 @@ function drawNew(){
  const box=$("#newGrid"), p=$("#newPanel"); if(!box||!p) return;
  let L=D.items.filter(function(x){return x.isNew});
  if(!L.length){ p.style.display="none"; return; }
- const last=L.map(function(x){return x.cdt||""}).sort().pop();
- if(last) L=L.filter(function(x){return (x.cdt||"")===last});
- L.sort(function(a,b){ return b.no-a.no; });
+ L.sort(function(a,b){ return String(b.cdt||"").localeCompare(String(a.cdt||"")) || b.no-a.no; });
  p.style.display="";
- $("#newCnt").textContent=L.length+"건"+(last?" · "+last+" 등록":"");
+ const days=[...new Set(L.map(function(x){return x.cdt||""}))].filter(Boolean).sort();
+ const rng = days.length>1 ? (days[0]+" ~ "+days[days.length-1]) : (days[0]||"");
+ $("#newCnt").textContent=L.length+"건"+(rng?" · "+rng:"");
  box.innerHTML=L.map(function(x){
   const img=x.im?'<img src="'+x.im+'" style="width:100%;height:110px;object-fit:cover;border-radius:8px 8px 0 0">'
    :(x.hasImg?'<div data-thumb="'+x.no+'" style="height:110px;background:#F3F4F6;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;color:#E5E7EB;font-size:11px">···</div>'
