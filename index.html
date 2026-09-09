@@ -452,8 +452,15 @@ body.pub #topOut, body.pub #sideOut{display:none!important}
 
  <section id="dash" class="on"><div class="wrap">
   <div class="kpis" id="kpi" style="position:sticky;top:81px;z-index:19;background:var(--bg);padding:10px 0"></div>
+  <div class="panel" id="gradePanel" style="display:none;border-left:3px solid #F59E0B">
+   <h3>등급 재검토 <span id="gradeCnt" style="font-size:12px;color:#B45309;font-weight:600;margin-left:6px"></span></h3>
+   <p class="hint">신규(N) 등록 후 30일이 지난 제품입니다. Tari 판매 실적을 확인해 S·A·B 등급으로 바꿔주세요.</p>
+   <div class="bd"><div id="gradeBox"></div></div></div>
+  <div class="panel" id="newPanel" style="display:none"><h3>신규 등록 상품 <span id="newCnt" style="font-size:12px;color:#2563EB;font-weight:600"></span></h3>
+   <p class="hint">가장 최근에 등록된 상품입니다. 다음 신규 등록이 있으면 그 날짜 기준으로 갱신됩니다.</p>
+   <div class="bd"><div id="newGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px"></div></div>
   <div class="panel" id="recPanel" style="display:none;border-left:3px solid #2563EB">
-   <h3>바이어 추천 <span id="recMeta" style="font-size:12px;color:#6B7280;font-weight:500;margin-left:6px"></span></h3>
+   <h3>소싱 참고 지표 <span id="recMeta" style="font-size:12px;color:#6B7280;font-weight:500;margin-left:6px"></span></h3>
    <p class="hint">울타리몰(미국)에서 잘 팔리는 흐름을 참고용으로 정리했습니다. 호주 시장은 수요가 다를 수 있으니 선택 가이드로만 활용해 주세요.</p>
    <div class="bd">
     <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
@@ -462,15 +469,8 @@ body.pub #topOut, body.pub #sideOut{display:none!important}
      <button type="button" class="recSt" data-st="냉장" style="padding:6px 14px;border-radius:7px;border:1px solid #E5E7EB;background:#fff;color:#374151;font-size:12px;font-weight:600;cursor:pointer">🧊 냉장</button>
      <button type="button" class="recSt" data-st="상온" style="padding:6px 14px;border-radius:7px;border:1px solid #E5E7EB;background:#fff;color:#374151;font-size:12px;font-weight:600;cursor:pointer">☀ 상온</button>
     </div>
-    <div id="recBox"></div>
-   </div></div>
-  <div class="panel" id="gradePanel" style="display:none;border-left:3px solid #F59E0B">
-   <h3>등급 재검토 <span id="gradeCnt" style="font-size:12px;color:#B45309;font-weight:600;margin-left:6px"></span></h3>
-   <p class="hint">신규(N) 등록 후 30일이 지난 제품입니다. Tari 판매 실적을 확인해 S·A·B 등급으로 바꿔주세요.</p>
-   <div class="bd"><div id="gradeBox"></div></div></div>
-  <div class="panel" id="newPanel" style="display:none"><h3>신규 등록 상품 <span id="newCnt" style="font-size:12px;color:#2563EB;font-weight:600"></span></h3>
-   <p class="hint">가장 최근에 등록된 상품입니다. 다음 신규 등록이 있으면 그 날짜 기준으로 갱신됩니다.</p>
-   <div class="bd"><div id="newGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px"></div></div></div>
+    <div id="recBox" style="max-height:330px;overflow:auto"></div>
+   </div></div></div>
   <div class="panel"><h3>카테고리별 품목 수</h3>
    <p class="hint">대분류를 누르면 해당 카테고리 제품만 조회합니다. 수산·식품은 MMPA 적용 여부가, 생활용품은 단가·박스입수가 함께 표시됩니다.</p>
    <div class="bd"><div class="catgrid" id="dcat"></div></div></div>
@@ -1708,7 +1708,7 @@ let RECST="", RECDATA=null;
 async function drawRec(){
  const p=$("#recPanel"), box=$("#recBox"); if(!p||!box) return;
  try{
-  const r=await api({action:"recommend",storage:RECST||null,limit:12});
+  const r=await api({action:"recommend",storage:RECST||null,limit:20});
   RECDATA=r;
   const L=r.items||[];
   if(!L.length && !RECST){ p.style.display="none"; return; }
@@ -1727,10 +1727,10 @@ async function drawRec(){
              : (x.vol==="보통" ? tag("판매 보통","#FEF3C7","#B45309") : "");
     const sd = x.steady==="매일 팔림" ? tag("매일 팔림","#EFF6FF","#1D4ED8") : "";
     const rf = x.ret_flag ? tag("반품 확인","#FEF2F2","#DC2626") : "";
-    return '<div class="recrow" data-no="'+x.row_no+'" style="display:flex;align-items:center;gap:13px;padding:12px 15px;border-bottom:1px solid #F3F4F6;cursor:pointer;background:#fff">'
+    return '<div class="recrow" data-no="'+x.row_no+'" style="display:flex;align-items:center;gap:11px;padding:8px 14px;border-bottom:1px solid #F3F4F6;cursor:pointer;background:#fff">'
      +'<span style="flex:none;width:20px;font-size:13px;font-weight:800;color:'+(i<3?"#B45309":"#D1D5DB")+'">'+(i+1)+'</span>'
-     +(im?'<img src="'+im+'" style="flex:none;width:40px;height:40px;object-fit:cover;border-radius:7px">'
-        :'<div data-thumb="'+x.row_no+'" style="flex:none;width:40px;height:40px;border-radius:7px;background:#F3F4F6"></div>')
+     +(im?'<img src="'+im+'" style="flex:none;width:32px;height:32px;object-fit:cover;border-radius:6px">'
+        :'<div data-thumb="'+x.row_no+'" style="flex:none;width:32px;height:32px;border-radius:6px;background:#F3F4F6"></div>')
      +'<div style="flex:1;min-width:0">'
      +'<div style="font-size:13px;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
      + impBadge(x.importance) + E(x.name_ko||"") +'</div>'
