@@ -3310,7 +3310,9 @@ async function loadPlans(){
   DEFAULTS=r.defaults||[];
   (r.items||[]).forEach(function(i){
    const x=plItem(i.row_no); if(!x) return;
-   const k=plKey(i.plan_code,plStorage(x)); if(!PLQ[k]) PLQ[k]=[];
+   const _pl=PLANS.find(function(z){return z.code===i.plan_code});
+   const _st=(_pl&&_pl.storage)||plStorage(x);
+   const k=plKey(i.plan_code,_st); if(!PLQ[k]) PLQ[k]=[];
    const _p=i.qty_plt!=null?+i.qty_plt:null, _e=i.qty_units!=null?+i.qty_units:null;
    PLQ[k].push({no:i.row_no, plt:_p, ea:_e, upl:(_p&&_e)?Math.round(_e/_p):null, unit:i.unit_krw!=null?+i.unit_krw:null, amt:i.amount_krw!=null?+i.amount_krw:null});
   });
