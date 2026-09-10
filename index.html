@@ -2826,7 +2826,7 @@ function plAddRowBind(scope){
    ev.stopPropagation();
    const no=+el.dataset.no, code=el.dataset.code;
    const pln=PLANS.find(function(z){return z.code===code});
-   const st=(pln&&pln.storage)||el.dataset.st;
+   const st=el.dataset.st||(pln&&pln.storage);
    const x=plItem(no); if(!x) return;
    const k=plKey(code,st);
    PLQ[k]=PLQ[k]||[];
@@ -3182,7 +3182,7 @@ function plBind(){
    e.stopPropagation();
    const no=+el.dataset.no, code=el.dataset.code;
    const pln=PLANS.find(function(z){return z.code===code});
-   const st=(pln&&pln.storage)||el.dataset.st;
+   const st=el.dataset.st||(pln&&pln.storage);
    const x=plItem(no); if(!x) return;
    const k=plKey(code,st);
    PLQ[k]=PLQ[k]||[];
@@ -3311,7 +3311,7 @@ async function loadPlans(){
   (r.items||[]).forEach(function(i){
    const x=plItem(i.row_no); if(!x) return;
    const _pl=PLANS.find(function(z){return z.code===i.plan_code});
-   const _st=(_pl&&_pl.storage)||plStorage(x);
+   const _st=i.storage||(_pl&&_pl.storage)||plStorage(x);
    const k=plKey(i.plan_code,_st); if(!PLQ[k]) PLQ[k]=[];
    const _p=i.qty_plt!=null?+i.qty_plt:null, _e=i.qty_units!=null?+i.qty_units:null;
    PLQ[k].push({no:i.row_no, plt:_p, ea:_e, upl:(_p&&_e)?Math.round(_e/_p):null, unit:i.unit_krw!=null?+i.unit_krw:null, amt:i.amount_krw!=null?+i.amount_krw:null});
@@ -3326,7 +3326,7 @@ if($("#plSave")) $("#plSave").onclick=async function(){
   if(p.status==="확정") continue;
   let rows=[];
   PLST.forEach(function(st){ plList(p.code,st).forEach(function(r){
-   rows.push({row_no:r.no,pos:rows.length,qty_plt:r.plt,qty_units:r.ea,unit_krw:r.unit,amount_krw:r.amt}); }); });
+   rows.push({row_no:r.no,pos:rows.length,qty_plt:r.plt,qty_units:r.ea,unit_krw:r.unit,amount_krw:r.amt,storage:st}); }); });
   if(!rows.length){ skip++; continue; }
   try{ await api({action:"plan_save",code:p.code,rows:rows}); okN++; }
   catch(e){ fails.push((p.label||p.code)+": "+e.message); }
