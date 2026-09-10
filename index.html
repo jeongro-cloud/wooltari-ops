@@ -2816,15 +2816,17 @@ function plAddRefresh(code,st){
  const box=document.querySelector('.pladdlist[data-key="'+code+'|'+st+'"]');
  if(!box) return;
  box.innerHTML=plAddList(code,st);
- plAddRowBind();
+ plAddRowBind(box);
 }
-function plAddRowBind(){
- document.querySelectorAll(".pladdrow").forEach(function(el){
+function plAddRowBind(scope){
+ (scope||document).querySelectorAll(".pladdrow").forEach(function(el){
   el.onmouseover=function(){ el.style.background="#EFF6FF"; };
   el.onmouseout=function(){ el.style.background="#fff"; };
   el.onclick=function(ev){
    ev.stopPropagation();
-   const no=+el.dataset.no, code=el.dataset.code, st=el.dataset.st;
+   const no=+el.dataset.no, code=el.dataset.code;
+   const pln=PLANS.find(function(z){return z.code===code});
+   const st=(pln&&pln.storage)||el.dataset.st;
    const x=plItem(no); if(!x) return;
    const k=plKey(code,st);
    PLQ[k]=PLQ[k]||[];
@@ -3179,7 +3181,9 @@ function plBind(){
  document.querySelectorAll(".pladdrow").forEach(function(el){
   el.onclick=function(e){
    e.stopPropagation();
-   const no=+el.dataset.no, code=el.dataset.code, st=el.dataset.st;
+   const no=+el.dataset.no, code=el.dataset.code;
+   const pln=PLANS.find(function(z){return z.code===code});
+   const st=(pln&&pln.storage)||el.dataset.st;
    const x=plItem(no); if(!x) return;
    const k=plKey(code,st);
    PLQ[k]=PLQ[k]||[];
