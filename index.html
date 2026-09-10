@@ -2832,7 +2832,6 @@ function plAddRowBind(scope){
    PLQ[k]=PLQ[k]||[];
    if(PLQ[k].some(function(z){return z.no===no})){ msg("#plMsg","이미 담겨 있습니다.",1); return; }
    const xs=plStorage(x);
-   if(xs!==st && !confirm("["+no+"] "+x.ko+"\n\n이 제품은 "+xs+" 보관입니다.\n"+st+" 구역에 담을까요?\n\n혼적이 가능한지 확인 후 진행해 주세요.")) return;
    PLQ[k].push({no:no, plt:null, ea:null, unit:null});
    PLDIRTY=true;
    msg("#plMsg","#"+no+" "+x.ko+" 추가"+(xs!==st?" ("+xs+" → "+st+" 구역)":"")+" — 저장을 눌러 반영하세요.");
