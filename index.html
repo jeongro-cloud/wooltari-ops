@@ -1819,7 +1819,8 @@ function drawNew(){
    :(x.hasImg?'<div data-thumb="'+x.no+'" style="height:110px;background:#F3F4F6;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;color:#E5E7EB;font-size:11px">···</div>'
    :'<div style="height:110px;background:#F3F4F6;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;color:#D1D5DB;font-size:11px">NO IMAGE</div>');
   return '<div data-open="'+x.no+'" style="border:1px solid #E5E7EB;border-radius:9px;overflow:hidden;cursor:pointer;background:#fff">'+img+
-   '<div style="padding:8px"><div style="font-size:10.5px;color:#9CA3AF">'+String(x.no).padStart(2,"0")+' · '+E(BNM(x)||"")+' · <span style="color:#2563EB">신규</span></div>'+
+   '<div style="padding:8px"><div style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:#9CA3AF"><span>'+String(x.no).padStart(2,"0")+' · '+E(BNM(x)||"")+'</span>'
+   +'<span style="margin-left:auto;padding:1px 6px;border-radius:4px;background:'+(_isToday?"#DCFCE7":"#F3F4F6")+';color:'+(_isToday?"#15803D":"#6B7280")+';font-size:9.5px;font-weight:700;white-space:nowrap">'+(_isToday?"오늘":_d)+'</span></div>'+
    '<div style="font-size:12.5px;font-weight:600;color:#111827;margin:2px 0;line-height:1.35">'+impBadge(x.imp)+E(x.ko)+'</div>'+
    '<div style="font-size:11px;color:#6B7280">'+E(x.sub||"")+(x.wt?" · "+E(x.wt):"")+'</div>'+
    '<div style="font-size:11.5px;color:#374151;margin-top:4px">'+(x.pkrw?KRW(x.pkrw):'<span style="color:#D97706">단가없음</span>')+'</div></div></div>';
