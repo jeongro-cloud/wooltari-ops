@@ -458,7 +458,7 @@ body.pub #topOut, body.pub #sideOut{display:none!important}
    <div class="bd"><div id="gradeBox"></div></div></div>
   <div class="panel" id="newPanel" style="display:none"><h3>신규 등록 상품 <span id="newCnt" style="font-size:12px;color:#2563EB;font-weight:600"></span></h3>
    <p class="hint">가장 최근에 등록된 상품입니다. 다음 신규 등록이 있으면 그 날짜 기준으로 갱신됩니다.</p>
-   <div class="bd"><div id="newGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px"></div></div>
+   <div class="bd"><div id="newGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:9px;max-height:420px;overflow-y:auto;padding-right:4px"></div></div>
   <div class="panel"><h3>카테고리별 품목 수</h3>
    <p class="hint">대분류를 누르면 해당 카테고리 제품만 조회합니다. 수산·식품은 MMPA 적용 여부가, 생활용품은 단가·박스입수가 함께 표시됩니다.</p>
    <div class="bd"><div class="catgrid" id="dcat"></div></div></div>
@@ -477,7 +477,7 @@ body.pub #topOut, body.pub #sideOut{display:none!important}
      <button type="button" class="recSt" data-st="냉장" style="padding:6px 14px;border-radius:7px;border:1px solid #E5E7EB;background:#fff;color:#374151;font-size:12px;font-weight:600;cursor:pointer">🧊 냉장</button>
      <button type="button" class="recSt" data-st="상온" style="padding:6px 14px;border-radius:7px;border:1px solid #E5E7EB;background:#fff;color:#374151;font-size:12px;font-weight:600;cursor:pointer">☀ 상온</button>
     </div>
-    <div id="recBox"></div>
+    <div id="recBox" style="max-height:440px;overflow-y:auto;padding-right:4px"></div>
    </div></div></div>
  </div></section>
 
@@ -1729,7 +1729,7 @@ async function drawRec(){
    const sd = x.steady==="매일 팔림" ? chip("매일 팔림","#EFF6FF","#1D4ED8") : "";
    const rf = x.ret_flag ? chip("반품 확인","#FEF2F2","#DC2626") : "";
    return '<div class="recrow" data-no="'+x.row_no+'" style="background:#fff;border:1px solid #E5E7EB;border-radius:11px;overflow:hidden;cursor:pointer;transition:box-shadow .15s">'
-    +'<div style="position:relative;height:118px;background:#F9FAFB">'
+    +'<div style="position:relative;height:96px;background:#F9FAFB">'
     + (im?'<img src="'+im+'" style="width:100%;height:100%;object-fit:cover">'
         :'<div data-thumb="'+x.row_no+'" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#E5E7EB;font-size:12px">···</div>')
     +'<span style="position:absolute;left:9px;top:9px;width:22px;height:22px;border-radius:50%;background:'+(medal||"rgba(17,24,39,.55)")+';color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center">'+(i+1)+'</span>'
@@ -1815,9 +1815,9 @@ function drawNew(){
   const _d=(x.cdt||"").slice(5).replace("-",".");
   const _today=new Date().toISOString().slice(0,10);
   const _isToday=(x.cdt||"")===_today;
-  const img=x.im?'<img src="'+x.im+'" style="width:100%;height:110px;object-fit:cover;border-radius:8px 8px 0 0">'
-   :(x.hasImg?'<div data-thumb="'+x.no+'" style="height:110px;background:#F3F4F6;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;color:#E5E7EB;font-size:11px">···</div>'
-   :'<div style="height:110px;background:#F3F4F6;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;color:#D1D5DB;font-size:11px">NO IMAGE</div>');
+  const img=x.im?'<img src="'+x.im+'" style="width:100%;height:88px;object-fit:cover;border-radius:8px 8px 0 0">'
+   :(x.hasImg?'<div data-thumb="'+x.no+'" style="height:88px;background:#F3F4F6;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;color:#E5E7EB;font-size:11px">···</div>'
+   :'<div style="height:88px;background:#F3F4F6;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;color:#D1D5DB;font-size:11px">NO IMAGE</div>');
   return '<div data-open="'+x.no+'" style="border:1px solid #E5E7EB;border-radius:9px;overflow:hidden;cursor:pointer;background:#fff">'+img+
    '<div style="padding:8px"><div style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:#9CA3AF"><span>'+String(x.no).padStart(2,"0")+' · '+E(BNM(x)||"")+'</span>'
    +'<span style="margin-left:auto;padding:1px 6px;border-radius:4px;background:'+(_isToday?"#DCFCE7":"#F3F4F6")+';color:'+(_isToday?"#15803D":"#6B7280")+';font-size:9.5px;font-weight:700;white-space:nowrap">'+(_isToday?"오늘":_d)+'</span></div>'+
@@ -1941,9 +1941,9 @@ async function thumbFlush(){
    const x=D.items.find(function(z){return String(z.no)===String(k)});
    if(x && !x.im){ x.im=m[k];
     document.querySelectorAll('[data-thumb="'+k+'"]').forEach(function(el){
-     const dash = el.style.height==="110px";
+     const dash = (el.style.height==="110px"||el.style.height==="88px");
      el.outerHTML = dash
-      ? '<img src="'+m[k]+'" alt="" loading="lazy" style="width:100%;height:110px;object-fit:cover;border-radius:8px 8px 0 0">'
+      ? '<img src="'+m[k]+'" alt="" loading="lazy" style="width:100%;height:88px;object-fit:cover;border-radius:8px 8px 0 0">'
       : '<img src="'+m[k]+'" alt="" loading="lazy">';
     });
    }
