@@ -3627,11 +3627,13 @@ function mgOpts(){
  if(s.options.length!==o.length) s.innerHTML=o.join("");
 }
 function mgRate(x){
+ if(!PV()) return (x&&x.mrate!=null)?x.mrate:((x&&x.st&&x.st.indexOf("상온")>=0)?0.12:0.15);
  if(x&&x.buy&&x.pkrw) return (x.pkrw-x.buy)/x.pkrw;
  if(x&&x.mrate!=null) return x.mrate;
  return (x&&x.st&&x.st.indexOf("상온")>=0)?0.12:0.15;
 }
 function drawMarg(){
+ if(!PV()){ const b=$("#mgBox")||$("#margBox"); if(b) b.innerHTML='<div style="padding:34px;text-align:center;color:#9CA3AF;font-size:13px">단가 열람 권한이 없어 마진 정보를 표시할 수 없습니다.<br><span style="font-size:11.5px">권한이 필요하면 마스터에게 요청해 주세요.</span></div>'; return; }
  const tb=$("#mgTbl"); if(!tb) return;
  if(!canTab("marg")) return;
  mgOpts();
