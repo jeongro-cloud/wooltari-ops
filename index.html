@@ -3757,8 +3757,13 @@ function stItems(x){
   +'<td style="'+td+';text-align:right">'+tEa.toLocaleString()+'</td>'
   +'<td style="'+td+'"></td>'
   +'<td style="'+td+';text-align:right">'+tBuy.toLocaleString()+'</td></tr></table>';
+ // 단가 열람 권한이 없으면 매입가가 비어 오차로 보이므로 경고를 띄우지 않음
  const diff=tBuy-(+x.amount_krw||0);
- if(diff!==0) o+='<div style="padding:7px 10px;font-size:11px;color:#DC2626;background:#FEF2F2">품목 합계와 발행금액이 '+Math.abs(diff).toLocaleString()+'원 차이납니다.</div>';
+ if(!PV()){
+  o+='<div style="padding:7px 10px;font-size:11px;color:#6B7280;background:#F9FAFB">단가 열람 권한이 없어 품목 금액은 표시되지 않습니다. 발행금액 '+(+x.amount_krw||0).toLocaleString()+'원 기준으로 발주됩니다.</div>';
+ } else if(diff!==0){
+  o+='<div style="padding:7px 10px;font-size:11px;color:#DC2626;background:#FEF2F2">품목 합계와 발행금액이 '+Math.abs(diff).toLocaleString()+'원 차이납니다.</div>';
+ }
  return o;
 }
 function stPoDoc(id){
