@@ -3310,8 +3310,18 @@ function plBind(){
    const p=PLANS.find(function(q){return q.code===code}); if(!p) return;
    if(p.status===next) return;
    if(next==="확정"&&PLDIRTY){ msg("#plMsg","저장하지 않은 변경이 있습니다. 먼저 저장하세요.",1); return; }
-   try{ await api({action:"plan_status",code:code,status:next}); p.status=next;
-    msg("#plMsg",code+" — "+STG[next][0]); drawPlan(); try{drawShip()}catch(e){} }
+   try{
+    await api({action:"plan_status",code:code,status:next}); p.status=next;
+    let extra="";
+    if(next==="확정"){
+     try{ const r=await api({action:"sett_sync"});
+      extra=" · 출납 "+((r.inserted||0)+(r.updated||0))+"건 반영";
+      try{ await loadSett(); drawSett(); }catch(e2){}
+     }catch(e2){ extra=" (출납 반영 실패 — 출납 탭에서 확인하세요)"; }
+    }
+    msg("#plMsg",code+" — "+STG[next][0]+extra);
+    drawPlan(); try{drawShip()}catch(e){}
+   }
    catch(e){ msg("#plMsg","실패 — "+e.message,1); }
   };
  });
