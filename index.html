@@ -724,6 +724,7 @@ body.pub #topOut, body.pub #sideOut{display:none!important}
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
      <select id="stPlan" style="padding:7px 10px;border:1px solid #E5E7EB;border-radius:8px;font-size:13px"></select>
      <input id="stQ" placeholder="상호명·담당자 검색" style="flex:1;min-width:170px;padding:7px 12px;border:1px solid #E5E7EB;border-radius:8px;font-size:13px">
+     <button id="stSync" class="gbtn" style="width:auto;padding:7px 14px;font-size:12.5px;background:#1F2937;color:#fff" title="확정 회차의 품목 합계로 지급액을 다시 계산합니다">🔄 회차 동기화</button>
      <button id="stXlsx" class="gbtn" style="width:auto;padding:7px 14px">⬇ 엑셀</button>
      <span id="stMsg" class="hint" style="margin:0"></span>
     </div>
@@ -3486,6 +3487,15 @@ async function loadSett(){
 }
 if($("#stPlan")) $("#stPlan").onchange=function(){drawSett()};
 if($("#stQ"))    $("#stQ").oninput=function(){drawSett()};
+if($("#stSync")) $("#stSync").onclick=async function(){
+ const b=$("#stSync"); b.disabled=true; const t=b.textContent; b.textContent="동기화 중…";
+ try{
+  const r=await api({action:"sett_sync"});
+  await loadSett(); drawSett();
+  msg("#stMsg","확정 회차 동기화 완료 — 신규 "+(r.inserted||0)+"건 · 갱신 "+(r.updated||0)+"건"+((r.deleted||0)?" · 정리 "+r.deleted+"건":""));
+ }catch(e){ msg("#stMsg","동기화 실패 — "+e.message,1); }
+ b.disabled=false; b.textContent=t;
+};
 if($("#stXlsx")) $("#stXlsx").onclick=function(){
  try{
   const A=[["구분","분류코드","상호명","품명","일자","입금일/지급일","담당자","연락처","이메일","금액(KRW)","처리여부"]];
