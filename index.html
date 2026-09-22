@@ -1535,7 +1535,7 @@ function drawAcct(){
    <td class="mono" style="font-size:11px;color:#9CA3AF">${E(u.last||"-")}</td>
    <td style="white-space:nowrap"><button class="btn gh" data-ed="${i}" style="padding:3px 8px">수정</button>
     ${me?"":` <button class="btn gh" data-tg="${i}" style="padding:3px 8px">${on?"정지":"해제"}</button>`
-      +` <button class="btn gh" data-del="${i}" style="padding:3px 8px">삭제</button>`}</td></tr>`;
+      +` <button class="btn gh" data-pwr="${i}" style="padding:3px 8px;color:#B45309" title="비밀번호를 1234로 초기화">비번</button>`+` <button class="btn gh" data-del="${i}" style="padding:3px 8px">삭제</button>`}</td></tr>`;
  }).join("") : `<tr><td colspan="11" style="color:#9CA3AF">조건에 맞는 회원이 없습니다.</td></tr>`;
  $("#ucnt").textContent=`${L.length}명 표시 중 (전체 ${USERS.length}명)`;
  $$("#utab [data-pv]").forEach(cb=>cb.onchange=async()=>{
@@ -1553,6 +1553,15 @@ function drawAcct(){
   try{ await api({action:"account_update",id:u.uid,username:u.id,patch:{status:next}});
    await refreshAccounts(); msg("#umsg", next==="approved"?"활성화했습니다.":"정지했습니다.");
   }catch(e){ msg("#umsg",e.message,1);} });
+ $$("#utab [data-pwr]").forEach(b=>b.onclick=async()=>{
+  const u=USERS[+b.dataset.pwr];
+  if(!confirm(u.co+" · "+u.nm+" ("+u.id+")\n\n비밀번호를 1234로 초기화할까요?\n기존 로그인은 모두 해제됩니다.")) return;
+  b.disabled=true;
+  try{ const r=await api({action:"password_reset",id:u.uid});
+   msg("#umsg", r.message||"초기화했습니다.");
+  }catch(e){ msg("#umsg","초기화 실패 — "+e.message,1); }
+  b.disabled=false;
+ });
  $$("#utab [data-del]").forEach(b=>b.onclick=async()=>{
   const u=USERS[+b.dataset.del];
   if(!confirm(u.co+" · "+u.nm+" 계정을 삭제하시겠습니까?"))return;
