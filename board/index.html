@@ -125,10 +125,10 @@ footer{margin-top:34px;font-size:12px;color:var(--ink-2)}
 <header><div class="wrap">
   <div class="hrow">
     <div><h1>데일리 업무 보드</h1><p class="sub" id="sub">오늘 한 일 · Work to do · 영문라벨·QC 절차 · PO 연계 · <b style="color:#F2F3F0" id="asof">불러오는 중…</b></p></div>
-    <div><div class="hbtn"><span class="dnav"><button id="dPrev" title="이전 날짜 (←)">◀</button><span id="dLabel" title="눌러서 달력으로 선택">—</span><input type="date" id="dPick" tabindex="-1"><button id="dNext" title="다음 날짜 (→)">▶</button></span><button id="btnToday">오늘</button><button id="btnReload">↻ 새로고침</button><button class="pri" id="btnMail">메일용 복사</button><button id="btnOut" title="로그아웃">로그아웃</button><a href="https://app.notion.com/p/3e9c2cf4d49681b397f2ca34196183cd" target="_blank" rel="noopener">노션</a></div><div class="status" id="status">불러오는 중</div></div>
+    <div><div class="hbtn"><span class="dnav"><button id="dPrev" title="이전 날짜 (←)">◀</button><span id="dLabel" title="눌러서 달력으로 선택">—</span><input type="date" id="dPick" tabindex="-1"><button id="dNext" title="다음 날짜 (→)">▶</button></span><button id="btnToday">오늘</button><button id="btnReload">↻ 새로고침</button><button class="pri" id="btnMail">메일용 복사</button><a href="https://app.notion.com/p/3e9c2cf4d49681b397f2ca34196183cd" target="_blank" rel="noopener">노션</a></div><div class="status" id="status">불러오는 중</div></div>
   </div>
   <div class="stats">
-    <div class="stat" data-j="today" style="color:#F2C0B8"><b id="sUrgent">–</b><span>🔴 오늘 급한 일</span></div>
+    <div class="stat" data-j="today" style="color:#F2C0B8"><b id="sUrgent">–</b><span>P1 최우선</span></div>
     <div class="stat" data-j="pipe" style="color:#E8A79F"><b id="sMine">–</b><span>내 조치 필요</span></div>
     <div class="stat" data-j="pipe" style="color:#9FC7B8"><b id="sJoseph">–</b><span>조셉 회신 대기</span></div>
     <div class="stat" data-j="pipe" style="color:#D9C589"><b id="sVendor">–</b><span>브랜드사·동료 회신 대기</span></div>
@@ -273,6 +273,8 @@ function renderDone(secs){
   $("doneDate").textContent=(d.title.split("—")[1]||"").trim();
   box.innerHTML=md2html(d.text.replace(/^##[^\n]*\n/,""));
 }
+const PRC={"1":"var(--mine)","2":"var(--prog)","3":"var(--other)"};
+function prBadge(i){const m=i.match(/^\s*\[?P([123])\]?\s*[·:\-]?\s*/);if(!m)return inline(i);return `<span class="tag" style="background:${PRC[m[1]]};margin-right:6px">P${m[1]}</span>`+inline(i.slice(m[0].length))}
 function renderToday(secs){
   const today=secs.find(s=>s.title.startsWith("📌"));
   if(!today){$("todayBoard").innerHTML='<div class="empty">오늘 섹션이 아직 없습니다.</div>';return}
@@ -282,9 +284,9 @@ function renderToday(secs){
     const title=((p.match(/^### (.*)/)||[])[1]||"").trim();
     const c=(CATC.find(([k])=>title.includes(k))||[,"var(--other)"])[1];
     const items=p.split("\n").filter(l=>/^\s*[-*] /.test(l)).map(l=>l.replace(/^\s*[-*]\s+/,""));
-    const u=items.filter(i=>i.includes("🔴")).length; urgent+=u;
-    html+=`<div class="col" style="--c:${c}"><div class="col-head"><h3>${esc(title.replace(/^\S+\s/,""))}</h3><em>${items.length}건${u?` · 🔴 ${u}`:""}</em></div>
-      <div class="card">${items.length?items.map(i=>`<div class="li">${inline(i)}</div>`).join(""):'<div class="empty">없음</div>'}</div></div>`;
+    const pr=i=>(i.match(/^\s*(?:\*\*)?\[?P([123])\]?/)||[])[1]||"9";items.sort((a,b)=>pr(a)-pr(b));const u=items.filter(i=>pr(i)==="1"||i.includes("🔴")).length; urgent+=u;
+    html+=`<div class="col" style="--c:${c}"><div class="col-head"><h3>${esc(title.replace(/^\S+\s/,""))}</h3><em>${items.length}건${u?` · P1 ${u}`:""}</em></div>
+      <div class="card">${items.length?items.map(i=>`<div class="li">${prBadge(i)}</div>`).join(""):'<div class="empty">없음</div>'}</div></div>`;
   }
   $("todayBoard").innerHTML=html; $("sUrgent").textContent=urgent;
 }
@@ -335,12 +337,11 @@ const K_TOKEN="dboard_token_v1";
 async function api(action,body={}){
   const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json","x-session":localStorage.getItem(K_TOKEN)||""},body:JSON.stringify({action,...body})});
   const j=await r.json().catch(()=>({error:"응답 오류"}));
-  if(r.status===401){showLogin(j.error);throw new Error(j.error||"로그인이 필요합니다")}
+  
   if(!r.ok||j.error)throw new Error(j.error||("HTTP "+r.status));
   return j;
 }
 async function load(){
-  if(!localStorage.getItem(K_TOKEN)){showLogin();return}
   setStatus("loading","불러오는 중");
   try{
     const {snapshot}=await api("snapshot");
@@ -387,7 +388,7 @@ function mailHtml(){
     const title=((p.match(/^### (.*)/)||[])[1]||"").trim();
     const items=p.split("\n").filter(l=>/^\s*[-*] /.test(l)).map(l=>l.replace(/^\s*[-*]\s+/,""));
     if(!items.length||/답하지 않은 멘션 없음/.test(items.join(""))&&/슬랙/.test(title)) continue;
-    urgent+=items.filter(i=>i.includes("🔴")).length;
+    urgent+=items.filter(i=>/^\s*\[?P1/.test(i)||i.includes("🔴")).length;
     cats.push({title,items,c:catColor(title)});
   }
   const stat=(n,l,col)=>`<td style="padding:0 22px 0 0;vertical-align:top"><div style="${F}font-size:26px;font-weight:700;line-height:1.1;color:${col}">${n}</div><div style="${F}font-size:11.5px;color:#A9B2AB;white-space:nowrap">${l}</div></td>`;
@@ -395,7 +396,7 @@ function mailHtml(){
     <div style="${F}font-size:21px;font-weight:700;color:#F2F3F0">데일리 업무 보고</div>
     <div style="${F}font-size:12.5px;color:#A9B2AB;margin-top:2px">상품개발 이정로 · 기준일 <b style="color:#F2F3F0">${esc(dateLab)}</b></div>
     <table cellpadding="0" cellspacing="0" style="margin-top:16px;border-top:1px solid #333B36;padding-top:12px"><tr>
-      ${stat(urgent,"🔴 오늘 급한 일","#F2C0B8")}${stat(by("mine").length,"내 조치 필요","#E8A79F")}${stat(by("joseph").length,"조셉 회신 대기","#9FC7B8")}${stat(by("vendor").length,"업체·동료 대기","#D9C589")}${stat(rows.filter(isOver).length,"준비 주차 초과·임박","#F2F3F0")}
+      ${stat(urgent,"P1 최우선","#F2C0B8")}${stat(by("mine").length,"내 조치 필요","#E8A79F")}${stat(by("joseph").length,"조셉 회신 대기","#9FC7B8")}${stat(by("vendor").length,"업체·동료 대기","#D9C589")}${stat(rows.filter(isOver).length,"준비 주차 초과·임박","#F2F3F0")}
     </tr></table></td></tr>`;
   const wk=(state.weekly.match(/\*\*이번 주 핵심:\*\*([^\n]*)/)||[])[1];
   const alert=wk?`<tr><td style="padding:18px 22px 0"><table width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:#fff;border:1px solid ${C.line};border-left:4px solid ${C.mine};padding:12px 16px;${F}font-size:13.5px;color:${C.ink}"><b>이번 주 핵심</b> — ${inline(wk.trim())}</td></tr></table></td></tr>`:"";
@@ -537,7 +538,7 @@ function renderDay(iso){
   let urgent=0;
   $("todayBoard").innerHTML=Object.entries(groups).map(([cat,items])=>{
     const c=(CATC.find(([k])=>cat.includes(k))||[,"var(--other)"])[1];
-    urgent+=items.filter(i=>/🔴|긴급|오늘 마감|최우선/.test(i)).length;
+    urgent+=items.filter(i=>/^\s*\[?P1|🔴|최우선/.test(i)).length;
     return `<div class="col" style="--c:${c}"><div class="col-head"><h3>${esc(cat)}</h3><em>${items.length}건</em></div><div class="card">${items.map(i=>`<div class="li">${inline(i)}</div>`).join("")}</div></div>`}).join("")||'<div class="empty">기록된 항목이 없습니다.</div>';
   $("sUrgent").textContent=urgent;
   // weekly: open the report for that week
@@ -593,7 +594,7 @@ document.addEventListener("keydown",e=>{if(e.target.tagName==="INPUT")return;if(
 // ---------- ui ----------
 function setStatus(k,t){$("status").textContent=t}
 document.querySelectorAll(".stat").forEach(s=>s.onclick=()=>document.getElementById(s.dataset.j).scrollIntoView({behavior:"smooth"}));
-$("btnReload").onclick=load;$("btnOut").onclick=logout;$("lgForm").onsubmit=doLogin;$("btnMail").onclick=copyMail;$("mpCopy").onclick=copyMail;$("mpClose").onclick=()=>$("mpBg").style.display="none";$("mpBg").onclick=e=>{if(e.target.id==="mpBg")$("mpBg").style.display="none"};
+$("btnReload").onclick=load;if($("btnOut"))$("btnOut").onclick=logout;$("lgForm").onsubmit=doLogin;$("btnMail").onclick=copyMail;$("mpCopy").onclick=copyMail;$("mpClose").onclick=()=>$("mpBg").style.display="none";$("mpBg").onclick=e=>{if(e.target.id==="mpBg")$("mpBg").style.display="none"};
 fromCache();load();
 </script>
 </body>
