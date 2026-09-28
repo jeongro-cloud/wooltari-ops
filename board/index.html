@@ -124,7 +124,7 @@ footer{margin-top:34px;font-size:12px;color:var(--ink-2)}
 <body>
 <header><div class="wrap">
   <div class="hrow">
-    <div><h1>데일리 업무 보드</h1><p class="sub" id="sub">오늘 할 일 · 영문라벨·QC 절차 · PO 연계 · <b style="color:#F2F3F0" id="asof">불러오는 중…</b></p></div>
+    <div><h1>데일리 업무 보드</h1><p class="sub" id="sub">오늘 한 일 · Work to do · 영문라벨·QC 절차 · PO 연계 · <b style="color:#F2F3F0" id="asof">불러오는 중…</b></p></div>
     <div><div class="hbtn"><span class="dnav"><button id="dPrev" title="이전 날짜 (←)">◀</button><span id="dLabel" title="눌러서 달력으로 선택">—</span><input type="date" id="dPick" tabindex="-1"><button id="dNext" title="다음 날짜 (→)">▶</button></span><button id="btnToday">오늘</button><button id="btnReload">↻ 새로고침</button><button class="pri" id="btnMail">메일용 복사</button><button id="btnOut" title="로그아웃">로그아웃</button><a href="https://app.notion.com/p/3e9c2cf4d49681b397f2ca34196183cd" target="_blank" rel="noopener">노션</a></div><div class="status" id="status">불러오는 중</div></div>
   </div>
   <div class="stats">
@@ -137,17 +137,19 @@ footer{margin-top:34px;font-size:12px;color:var(--ink-2)}
   </div>
 </div></header>
 <nav class="jump"><div class="wrap">
-  <a href="#today">오늘 할 일</a><a href="#pipe">라벨 파이프라인</a><a href="#proc">업무 절차</a><a href="#po">PO·Airtable 대조</a><a href="#weekly">주간 리포트</a><a href="#history">데일리 기록</a>
+  <a href="#done">오늘 한 일</a><a href="#today">Work to do</a><a href="#pipe">라벨 파이프라인</a><a href="#proc">업무 절차</a><a href="#po">PO·Airtable 대조</a><a href="#weekly">주간 리포트</a><a href="#history">데일리 기록</a>
 </div></nav>
 <div class="wrap">
   <div id="summary"></div>
-  <h2 id="today">오늘 할 일 <span class="hint" id="todayDate"></span></h2>
+  <h2 id="done">오늘 한 일 <span class="hint" id="doneDate"></span></h2>
+  <div class="md" id="doneBox"><div class="skel"></div></div>
+  <h2 id="today">Work to do <span class="hint" id="todayDate"></span></h2>
   <div class="board" id="todayBoard"><div class="skel"></div></div>
   <h2 id="pipe">영문라벨·QC 파이프라인 <span class="hint">누구 차례인지 · 카드 제목을 누르면 노션, '메일 보기'를 누르면 이 화면에서 메일 스레드가 열립니다</span></h2>
   <div class="board" id="pipeBoard"><div class="skel"></div></div>
   <h2 id="proc">업무 절차 <span class="hint">① 업체 자료 → ② 조셉 검토 → ③ 수정 반영 → ④ 부착사진·확정 → ⑤ 완료</span></h2>
   <div class="chips" id="chips"></div>
-  <div class="scroll"><table class="po"><thead><tr><th>누구 차례</th><th>건</th><th>진행 단계</th><th>준비 주차</th><th>다음 할 일</th><th>경과</th></tr></thead><tbody id="procBody"><tr><td colspan="6"><div class="skel"></div></td></tr></tbody></table></div>
+  <div class="scroll"><table class="po"><thead><tr><th>누구 차례</th><th>건</th><th>진행 단계</th><th>준비 주차</th><th>다음 할 일</th><th>마지막 메일</th></tr></thead><tbody id="procBody"><tr><td colspan="6"><div class="skel"></div></td></tr></tbody></table></div>
   <h2 id="po">PO·Airtable 대조</h2>
   <div class="md" id="poBox"><div class="skel"></div></div>
   <h2 id="weekly">주간 리포트</h2>
@@ -251,7 +253,8 @@ function turnCls(t){return {"내 차례":"mine","조셉 대기":"joseph","업체
 function isOver(r){const w=r["준비 주차"]||"";return r["차례"]!=="완료"&&(/초과/.test(w)||/10월 1주차/.test(w))}
 function weekTag(r){const w=r["준비 주차"];if(!w)return"";return `<span class="tag" style="background:${/초과/.test(w)?"var(--mine)":/1주차/.test(w)?"var(--prog)":"var(--wait)"}">${esc(w)}</span>`}
 function stepTag(r){const i=stepIdx(r);return i<0?"":`<span class="tag o">${esc(STEPS[i])}</span>`}
-function ageTxt(r){const a=r["경과일"]||0;return a===0?"오늘":a+"일째"}
+function mailDate(r){const d=r["date:마지막 메일:start"]||r["마지막 메일"]||"";const m=String(d).match(/\d{4}-(\d{2})-(\d{2})/);return m?(+m[1])+"/"+(+m[2]):""}
+function ageTxt(r){const d=mailDate(r);return (r["경과일"]||0)===0?"오늘":d?d+" 메일":""}
 
 function renderSummary(secs){
   // prefer latest weekly 핵심 callout, else board top callout
@@ -263,6 +266,12 @@ function renderSummary(secs){
   if(lines.length) html+=`<div class="alert" style="--c:var(--wait)"><p>${lines.map(inline).join("<br>")}</p></div>`;
   $("summary").innerHTML=html;
   const m=top.match(/\*\*(\d+월 \d+일 \([^)]+\))\*\*/); $("asof").textContent="기준일 "+(m?m[1]:"—");
+}
+function renderDone(secs){
+  const d=secs.find(s=>s.title.startsWith("✅"));const box=$("doneBox");if(!box)return;
+  if(!d){box.innerHTML='<div class="empty">오늘 한 일이 아직 없습니다 (16:00 마감 기준 갱신).</div>';$("doneDate").textContent="";return}
+  $("doneDate").textContent=(d.title.split("—")[1]||"").trim();
+  box.innerHTML=md2html(d.text.replace(/^##[^\n]*\n/,""));
 }
 function renderToday(secs){
   const today=secs.find(s=>s.title.startsWith("📌"));
@@ -287,7 +296,7 @@ function renderPipe(){
   const card=r=>`<div class="card"><h4><a href="${esc(r.url||"#")}" target="_blank" rel="noopener">${esc(r["건"])}</a></h4>
     <p class="sku">${stepTag(r)}${weekTag(r)}${r["메모"]?`<span>${esc(r["메모"])}</span>`:""}</p>
     <p class="act">${esc(r["대기 상대"]||"")}</p>
-    <span class="age ${(r["경과일"]||0)>=7&&r["차례"]!=="완료"?"late":""}">${esc(r["마지막 발신"]||"")} 마지막 · ${ageTxt(r)}${r.ThreadId?` · <a href="#" class="mlink" data-tid="${esc(r.ThreadId)}" data-t="${esc(r["건"])}">메일 보기</a>`:""}</span></div>`;
+    <span class="age">${esc(r["마지막 발신"]||"")} 마지막 · ${ageTxt(r)}${r.ThreadId?` · <a href="#" class="mlink" data-tid="${esc(r.ThreadId)}" data-t="${esc(r["건"])}">메일 보기</a>`:""}</span></div>`;
   const col=(k,t)=>{const l=sortR(by(k));return `<div class="col" style="--c:${COL[k]}"><div class="col-head"><h3>${t}</h3><em>${l.length}건</em></div>${l.map(card).join("")||'<div class="empty">없음</div>'}</div>`};
   const others=by("other");
   $("pipeBoard").innerHTML=col("mine","내 조치 필요")+col("joseph","조셉 회신 대기")+col("vendor","브랜드사·동료 회신 대기")+col("done","종결")+
@@ -307,7 +316,7 @@ function renderProc(){
       <td><div class="steps">${STEP_SHORT.map((s,i)=>`<div class="step ${si>=0&&i<si?"done":i===si?"cur":""}">${i+1} ${s}</div>`).join("")}</div></td>
       <td>${weekTag(r)||'<span style="color:#9AA29C">—</span>'}</td>
       <td>${esc(r["대기 상대"]||"")}</td>
-      <td style="white-space:nowrap;${(r["경과일"]||0)>=7?"color:var(--mine);font-weight:640":""}">${ageTxt(r)}${r.ThreadId?`<br><a href="#" class="mlink" data-tid="${esc(r.ThreadId)}" data-t="${esc(r["건"])}" style="font-size:12px;color:var(--blue)">메일 보기</a>`:""}</td></tr>`}).join("")
+      <td style="white-space:nowrap">${ageTxt(r)}${r.ThreadId?`<br><a href="#" class="mlink" data-tid="${esc(r.ThreadId)}" data-t="${esc(r["건"])}" style="font-size:12px;color:var(--blue)">메일 보기</a>`:""}</td></tr>`}).join("")
     :'<tr><td colspan="6" class="empty">해당하는 건이 없습니다.</td></tr>';
 }
 function renderPO(secs){const s=findSec(secs,"PO·Airtable");$("poBox").innerHTML=s?md2html(s.text.replace(/^##[^\n]*\n/,"")):'<div class="empty">대조 섹션이 없습니다.</div>'}
@@ -318,7 +327,7 @@ function renderHistory(secs){
   const f=$("histBox").querySelector("details");if(f)f.open=true;
 }
 function renderWeekly(){$("weeklyBox").innerHTML=md2html(state.weekly);const f=$("weeklyBox").querySelector("details");if(f)f.open=true}
-function renderAll(){const secs=sections(state.board);renderSummary(secs);renderToday(secs);renderPipe();renderProc();renderPO(secs);renderWeekly();renderHistory(secs);try{setupPicker();showDate(curDate)}catch(e){console.warn(e)}}
+function renderAll(){const secs=sections(state.board);renderSummary(secs);renderDone(secs);renderToday(secs);renderPipe();renderProc();renderPO(secs);renderWeekly();renderHistory(secs);try{setupPicker();showDate(curDate)}catch(e){console.warn(e)}}
 
 // ---------- data (web) ----------
 const API="https://pproifuguyyfqzrybdud.supabase.co/functions/v1/dboard-api";
@@ -396,7 +405,9 @@ function mailHtml(){
   const li=t=>`<div style="${F}font-size:12.5px;color:#222824;line-height:1.55;margin:3px 0">· ${inline(t)}</div>`;
   const grid=cells=>{let h="";for(let i=0;i<cells.length;i+=2)h+=`<tr>${cells[i]}${cells[i+1]||'<td width="50%"></td>'}</tr>`;return `<tr><td style="padding:0 17px"><table width="100%" cellpadding="0" cellspacing="0">${h}</table></td></tr>`};
   let body=header+alert;
-  if(cats.length){body+=h2("오늘 할 일");body+=grid(cats.map(k=>card(k.c,esc(k.title.replace(/^\S+\s/,"")),`${k.items.length}건`,k.items.map(li).join(""))))}
+  const done=secs.find(s=>s.title.startsWith("✅"));const doneItems=done?done.text.split("\n").filter(l=>/^\s*[-*] /.test(l)).map(l=>l.replace(/^\s*[-*]\s+/,"")):[];
+  if(doneItems.length){body+=h2("오늘 한 일 <span style=\"font-weight:400;font-size:12px;color:"+C.ink2+"\">16:00 마감 기준</span>");body+=`<tr><td style="padding:0 22px"><table width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:#fff;border:1px solid ${C.line};border-left:4px solid ${C.wait};padding:10px 14px">${doneItems.map(li).join("")}</td></tr></table></td></tr>`}
+  if(cats.length){body+=h2("Work to do");body+=grid(cats.map(k=>card(k.c,esc(k.title.replace(/^\S+\s/,"")),`${k.items.length}건`,k.items.map(li).join(""))))}
   // pipeline
   const sortR=a=>a.slice().sort((x,y)=>(isOver(y)-isOver(x))||((y["경과일"]||0)-(x["경과일"]||0)));
   const pcard=r=>{const si=stepIdx(r);const w=r["준비 주차"];const late=(r["경과일"]||0)>=7;
@@ -404,7 +415,7 @@ function mailHtml(){
       <div style="${F}font-size:12.5px;font-weight:700;color:${C.ink}">${esc(r["건"])}</div>
       <div style="margin:3px 0">${si>=0?`<span style="${F}display:inline-block;font-size:10.5px;padding:1px 6px;border:1px solid ${C.line};color:${C.ink2};border-radius:2px">${esc(STEPS[si])}</span> `:""}${w?`<span style="${F}display:inline-block;font-size:10.5px;padding:1px 6px;border-radius:2px;color:#fff;background:${/초과/.test(w)?C.mine:/1주차/.test(w)?C.prog:C.wait}">${esc(w)}</span>`:""}</div>
       <div style="${F}font-size:12px;color:#222824">${esc(r["대기 상대"]||"")}</div>
-      <div style="${F}font-size:11px;color:${late?C.mine:C.ink2};font-weight:${late?700:400}">${esc(r["마지막 발신"]||"")} 마지막 · ${(r["경과일"]||0)===0?"오늘":(r["경과일"]||0)+"일째"}</div></div>`};
+      <div style="${F}font-size:11px;color:${C.ink2}">${esc(r["마지막 발신"]||"")} 마지막 · ${ageTxt(r)}</div></div>`};
   const pcol=(k,t,c)=>{const l=sortR(by(k));return `<td width="33%" style="vertical-align:top;padding:0 5px"><table width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:#fff;border:1px solid ${C.line};border-left:4px solid ${c};padding:10px 12px">
       <div style="${F}font-size:13px;font-weight:700;color:${c};padding-bottom:4px">${t}<span style="float:right;font-weight:400;color:${C.ink2};font-size:11.5px">${l.length}건</span></div>${l.map(pcard).join("")||`<div style="${F}font-size:12px;color:${C.ink2}">없음</div>`}</td></tr></table></td>`};
   body+=h2("영문라벨·QC 파이프라인");
@@ -414,11 +425,11 @@ function mailHtml(){
   const stepsCells=r=>{const si=stepIdx(r);return STEP_SHORT.map((s,i)=>`<td style="${F}font-size:10px;text-align:center;padding:3px 2px;white-space:nowrap;background:${i===si?C.ink:i<si?"#D5DED7":"#EEF0EC"};color:${i===si?"#fff":i<si?C.wait:"#9AA29C"};font-weight:${i===si?700:400}">${i+1} ${s}</td>`).join('<td style="width:2px"></td>')};
   body+=h2("업무 절차");
   body+=`<tr><td style="padding:0 22px 6px"><table width="100%" cellpadding="0" cellspacing="0" style="background:#fff;border:1px solid ${C.line}">
-    <tr>${["건","진행 단계","준비 주차","경과"].map(t=>`<td style="${F}font-size:11.5px;font-weight:700;color:${C.ink2};background:#F5F6F3;padding:7px 10px;border-bottom:1px solid ${C.line}">${t}</td>`).join("")}</tr>
+    <tr>${["건","진행 단계","준비 주차","마지막 메일"].map(t=>`<td style="${F}font-size:11.5px;font-weight:700;color:${C.ink2};background:#F5F6F3;padding:7px 10px;border-bottom:1px solid ${C.line}">${t}</td>`).join("")}</tr>
     ${prog.map(r=>`<tr><td style="${F}font-size:12.5px;padding:7px 10px;border-bottom:1px solid #E6E9E5;font-weight:600">${esc(r["건"])}</td>
       <td style="padding:7px 10px;border-bottom:1px solid #E6E9E5"><table cellpadding="0" cellspacing="0"><tr>${stepsCells(r)}</tr></table></td>
       <td style="${F}font-size:11.5px;padding:7px 10px;border-bottom:1px solid #E6E9E5;white-space:nowrap;color:${/초과/.test(r["준비 주차"]||"")?C.mine:C.ink2}">${esc(r["준비 주차"]||"—")}</td>
-      <td style="${F}font-size:11.5px;padding:7px 10px;border-bottom:1px solid #E6E9E5;white-space:nowrap;color:${(r["경과일"]||0)>=7?C.mine:C.ink2}">${(r["경과일"]||0)}일</td></tr>`).join("")}
+      <td style="${F}font-size:11.5px;padding:7px 10px;border-bottom:1px solid #E6E9E5;white-space:nowrap;color:${C.ink2}">${ageTxt(r)}</td></tr>`).join("")}
   </table></td></tr>`;
   body+=`<tr><td style="padding:14px 22px 22px;${F}font-size:11px;color:${C.ink2}">자동 생성 · 데일리 업무 보드</td></tr>`;
   return `<table width="100%" cellpadding="0" cellspacing="0" style="background:${C.paper}"><tr><td align="center" style="padding:14px 8px"><table width="760" cellpadding="0" cellspacing="0" style="max-width:760px;width:100%;background:${C.paper}">${body}</table></td></tr></table>`;
@@ -558,12 +569,12 @@ function updateNav(){
 function showDate(iso){
   curDate=iso; updateNav();
   const bd=boardDateISO(), t=todayISO();
-  if(iso===bd){const secs=sections(state.board);renderSummary(secs);renderToday(secs);
+  if(iso===bd){const secs=sections(state.board);renderSummary(secs);renderDone(secs);renderToday(secs);
     $("histBox").querySelectorAll("details").forEach((el,i)=>el.open=i===0);
     if(iso!==t){$("summary").insertAdjacentHTML("afterbegin",`<div class="pastbar"><span>📅 <b>${isoLabel(iso)}</b> 업무보드 · 라벨 파이프라인·업무 절차는 <b>현재</b> 상태입니다</span><button onclick="showDate(todayISO())">오늘로</button></div>`)}
     return}
   if(iso===t){ // today's board not generated yet → show latest board with note
-    const secs=sections(state.board);renderSummary(secs);renderToday(secs);
+    const secs=sections(state.board);renderSummary(secs);renderDone(secs);renderToday(secs);
     $("summary").insertAdjacentHTML("afterbegin",`<div class="pastbar"><span>오늘(${isoLabel(t)}) 보드는 아직 생성 전입니다 · 가장 최근 <b>${bd?isoLabel(bd):""}</b> 보드를 보여드립니다 (평일 오전 7시 자동 갱신)</span></span></div>`);
     return}
   renderDay(iso);
