@@ -129,9 +129,9 @@ footer{margin-top:34px;font-size:12px;color:var(--ink-2)}
   </div>
   <div class="stats">
     <div class="stat" data-j="today" style="color:#F2C0B8"><b id="sUrgent">–</b><span>P1 최우선</span></div>
-    <div class="stat" data-j="pipe" style="color:#E8A79F"><b id="sMine">–</b><span>내 조치 필요</span></div>
-    <div class="stat" data-j="pipe" style="color:#9FC7B8"><b id="sJoseph">–</b><span>조셉 회신 대기</span></div>
-    <div class="stat" data-j="pipe" style="color:#D9C589"><b id="sVendor">–</b><span>브랜드사·동료 회신 대기</span></div>
+    <div class="stat" data-j="pipe" style="color:#E8A79F"><b id="sMine">–</b><span>처리 필요</span></div>
+    <div class="stat" data-j="pipe" style="color:#9FC7B8"><b id="sJoseph">–</b><span>QC 검토 중</span></div>
+    <div class="stat" data-j="pipe" style="color:#D9C589"><b id="sVendor">–</b><span>회신 대기</span></div>
     <div class="stat" data-j="proc" style="color:#F2F3F0"><b id="sOver">–</b><span>준비 주차 초과·임박</span></div>
     <div class="stat" data-j="pipe" style="color:#B8BEB8"><b id="sDone">–</b><span>종결</span></div>
   </div>
@@ -249,6 +249,8 @@ const findSec=(secs,kw)=>secs.find(s=>s.title.includes(kw));
 const COL={mine:"var(--mine)",joseph:"var(--wait)",vendor:"var(--prog)",done:"var(--done)",other:"var(--other)"};
 const CATC=[["영문라벨","var(--blue)"],["QC","var(--mine)"],["견적","var(--prog)"],["업체","var(--wait)"],["미팅","var(--violet)"],["슬랙","var(--violet)"],["내부","var(--done)"]];
 function stepIdx(r){const i=STEPS.indexOf(r["단계"]||"");if(i>=0)return i;if(r["차례"]==="완료")return 4;if(r["차례"]==="조셉 대기")return 1;return -1}
+const TURN={"내 차례":"처리 필요","조셉 대기":"QC 검토 중","업체·동료 대기":"회신 대기","다른 담당자":"참고","완료":"완료"};
+const isExcluded=r=>/제외/.test(r["메모"]||"");
 function turnCls(t){return {"내 차례":"mine","조셉 대기":"joseph","업체·동료 대기":"vendor","다른 담당자":"other","완료":"done"}[t]||"other"}
 function isOver(r){const w=r["준비 주차"]||"";return r["차례"]!=="완료"&&(/초과/.test(w)||/10월 1주차/.test(w))}
 function weekTag(r){const w=r["준비 주차"];if(!w)return"";return `<span class="tag" style="background:${/초과/.test(w)?"var(--mine)":/1주차/.test(w)?"var(--prog)":"var(--wait)"}">${esc(w)}</span>`}
@@ -271,7 +273,9 @@ function renderDone(secs){
   const d=secs.find(s=>s.title.startsWith("✅"));const box=$("doneBox");if(!box)return;
   if(!d){box.innerHTML='<div class="empty">오늘 한 일이 아직 없습니다 (16:00 마감 기준 갱신).</div>';$("doneDate").textContent="";return}
   $("doneDate").textContent=(d.title.split("—")[1]||"").trim();
-  box.innerHTML=md2html(d.text.replace(/^##[^\n]*\n/,""));
+  const parts=d.text.split(/\n(?=### )/).slice(1);
+  if(parts.length){box.className="board";box.innerHTML=parts.map(p=>{const title=((p.match(/^### (.*)/)||[])[1]||"").trim();const c=(CATC.find(([k])=>title.includes(k))||[,"var(--other)"])[1];const items=p.split("\n").filter(l=>/^\s*[-*] /.test(l)).map(l=>l.replace(/^\s*[-*]\s+/,""));return `<div class="col" style="--c:${c}"><div class="col-head"><h3>${esc(title.replace(/^\S+\s/,""))}</h3><em>${items.length}건</em></div><div class="card">${items.map(i=>`<div class="li">${inline(i)}</div>`).join("")}</div></div>`}).join("");return}
+  box.className="md";box.innerHTML=md2html(d.text.replace(/^##[^\n]*\n/,""));
 }
 const PRC={"1":"var(--mine)","2":"var(--prog)","3":"var(--other)"};
 function prBadge(i){const m=i.match(/^\s*\[?P([123])\]?\s*[·:\-]?\s*/);if(!m)return inline(i);return `<span class="tag" style="background:${PRC[m[1]]};margin-right:6px">P${m[1]}</span>`+inline(i.slice(m[0].length))}
@@ -284,6 +288,7 @@ function renderToday(secs){
     const title=((p.match(/^### (.*)/)||[])[1]||"").trim();
     const c=(CATC.find(([k])=>title.includes(k))||[,"var(--other)"])[1];
     const items=p.split("\n").filter(l=>/^\s*[-*] /.test(l)).map(l=>l.replace(/^\s*[-*]\s+/,""));
+    if(/슬랙/.test(title)&&(!items.length||/없음/.test(items.join(""))))continue;
     const pr=i=>(i.match(/^\s*(?:\*\*)?\[?P([123])\]?/)||[])[1]||"9";items.sort((a,b)=>pr(a)-pr(b));const u=items.filter(i=>pr(i)==="1"||i.includes("🔴")).length; urgent+=u;
     html+=`<div class="col" style="--c:${c}"><div class="col-head"><h3>${esc(title.replace(/^\S+\s/,""))}</h3><em>${items.length}건${u?` · P1 ${u}`:""}</em></div>
       <div class="card">${items.length?items.map(i=>`<div class="li">${prBadge(i)}</div>`).join(""):'<div class="empty">없음</div>'}</div></div>`;
@@ -301,17 +306,17 @@ function renderPipe(){
     <span class="age">${esc(r["마지막 발신"]||"")} 마지막 · ${ageTxt(r)}${r.ThreadId?` · <a href="#" class="mlink" data-tid="${esc(r.ThreadId)}" data-t="${esc(r["건"])}">메일 보기</a>`:""}</span></div>`;
   const col=(k,t)=>{const l=sortR(by(k));return `<div class="col" style="--c:${COL[k]}"><div class="col-head"><h3>${t}</h3><em>${l.length}건</em></div>${l.map(card).join("")||'<div class="empty">없음</div>'}</div>`};
   const others=by("other");
-  $("pipeBoard").innerHTML=col("mine","내 조치 필요")+col("joseph","조셉 회신 대기")+col("vendor","브랜드사·동료 회신 대기")+col("done","종결")+
+  $("pipeBoard").innerHTML=col("mine","처리 필요")+col("joseph","QC 검토 중 (조셉)")+col("vendor","회신 대기 (브랜드사·동료)")+col("done","종결")+
     (others.length?`<div class="col" style="--c:var(--other)"><div class="col-head"><h3>다른 담당자 진행</h3><em>${others.length}건 · 참조</em></div>${others.map(card).join("")}</div>`:"");
 }
 function renderProc(){
-  const F=[["all","진행 중 전체"],["over","준비 주차 초과·임박"],["mine","내 조치"],["joseph","조셉 대기"],["vendor","브랜드사·동료 대기"]];
+  const F=[["all","진행 중 전체"],["over","준비 주차 임박"],["mine","처리 필요"],["joseph","QC 검토 중"],["vendor","회신 대기"]];
   $("chips").innerHTML=F.map(([k,l])=>`<span class="chip ${state.filter===k?"on":""}" data-f="${k}">${l}</span>`).join("");
   $("chips").querySelectorAll(".chip").forEach(c=>c.onclick=()=>{state.filter=c.dataset.f;renderProc()});
   let l=state.rows.filter(r=>{const t=turnCls(r["차례"]);if(t==="done"||t==="other")return false;
     if(state.filter==="all")return true;if(state.filter==="over")return isOver(r);return t===state.filter});
   l.sort((a,b)=>(isOver(b)-isOver(a))||(stepIdx(a)-stepIdx(b))||((b["경과일"]||0)-(a["경과일"]||0)));
-  const who={mine:"이정로",joseph:"조셉 (bkim)",vendor:"브랜드사·동료"};
+  const who={mine:"처리 필요",joseph:"QC 검토 중",vendor:"회신 대기"};
   $("procBody").innerHTML=l.length?l.map(r=>{const si=stepIdx(r);const t=turnCls(r["차례"]);
     return `<tr><td style="white-space:nowrap"><b style="color:${COL[t]}">${who[t]||esc(r["차례"])}</b></td>
       <td><a href="${esc(r.url||"#")}" target="_blank" rel="noopener" style="color:inherit;font-weight:620;text-decoration:none">${esc(r["건"])}</a></td>
@@ -325,7 +330,7 @@ function renderPO(secs){const s=findSec(secs,"PO·Airtable");$("poBox").innerHTM
 function renderHistory(secs){
   const i=secs.findIndex(s=>s.title.includes("데일리 기록"));
   const txt=i>=0?secs.slice(i).map(s=>s.text).join("\n").replace(/^#[^\n]*\n/,""):"";
-  $("histBox").innerHTML=txt?md2html(txt):'<div class="empty">기록이 없습니다.</div>';
+  $("histBox").innerHTML=txt?md2html(txt.replace(/\t*<details color="red">[\s\S]*?<\/details>\n?/g,"").replace(/ · 빨간 줄 = 누락된 영업일/,"")):'<div class="empty">기록이 없습니다.</div>';
   const f=$("histBox").querySelector("details");if(f)f.open=true;
 }
 function renderWeekly(){$("weeklyBox").innerHTML=md2html(state.weekly);const f=$("weeklyBox").querySelector("details");if(f)f.open=true}
@@ -346,7 +351,7 @@ async function load(){
   try{
     const {snapshot}=await api("snapshot");
     if(!snapshot){setStatus("err","아직 저장된 보드가 없습니다");return}
-    state.board=snapshot.board;state.weekly=snapshot.weekly;state.rows=snapshot.rows||[];
+    state.board=snapshot.board;state.weekly=snapshot.weekly;state.rows=(snapshot.rows||[]).filter(r=>!isExcluded(r));
     try{localStorage.setItem(K_CACHE,JSON.stringify({board:state.board,weekly:state.weekly,rows:state.rows,ts:Date.now()}))}catch(e){}
     renderAll();
     setStatus("ok","보드 갱신 "+new Date(snapshot.updated_at).toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}));
@@ -368,7 +373,7 @@ async function doLogin(e){
 function logout(){api("logout").catch(()=>{});localStorage.removeItem(K_TOKEN);localStorage.removeItem(K_CACHE);location.reload()}
 function fromCache(){
   try{const c=JSON.parse(localStorage.getItem(K_CACHE)||"null");if(!c)return;
-    state.board=c.board;state.weekly=c.weekly;state.rows=c.rows;renderAll();
+    state.board=c.board;state.weekly=c.weekly;state.rows=(c.rows||[]).filter(r=>!isExcluded(r));renderAll();
     setStatus("loading","저장본 표시 중 · 최신 확인 중");}catch(e){}
 }
 
@@ -396,18 +401,20 @@ function mailHtml(){
     <div style="${F}font-size:21px;font-weight:700;color:#F2F3F0">데일리 업무 보고</div>
     <div style="${F}font-size:12.5px;color:#A9B2AB;margin-top:2px">상품개발 이정로 · 기준일 <b style="color:#F2F3F0">${esc(dateLab)}</b></div>
     <table cellpadding="0" cellspacing="0" style="margin-top:16px;border-top:1px solid #333B36;padding-top:12px"><tr>
-      ${stat(urgent,"P1 최우선","#F2C0B8")}${stat(by("mine").length,"내 조치 필요","#E8A79F")}${stat(by("joseph").length,"조셉 회신 대기","#9FC7B8")}${stat(by("vendor").length,"업체·동료 대기","#D9C589")}${stat(rows.filter(isOver).length,"준비 주차 초과·임박","#F2F3F0")}
+      ${stat(urgent,"P1 최우선","#F2C0B8")}${stat(by("mine").length,"처리 필요","#E8A79F")}${stat(by("joseph").length,"QC 검토 중","#9FC7B8")}${stat(by("vendor").length,"회신 대기","#D9C589")}${stat(rows.filter(isOver).length,"준비 주차 초과·임박","#F2F3F0")}
     </tr></table></td></tr>`;
   const wk=(state.weekly.match(/\*\*이번 주 핵심:\*\*([^\n]*)/)||[])[1];
   const alert=wk?`<tr><td style="padding:18px 22px 0"><table width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:#fff;border:1px solid ${C.line};border-left:4px solid ${C.mine};padding:12px 16px;${F}font-size:13.5px;color:${C.ink}"><b>이번 주 핵심</b> — ${inline(wk.trim())}</td></tr></table></td></tr>`:"";
   const h2=t=>`<tr><td style="padding:22px 22px 8px;${F}font-size:15px;font-weight:700;color:${C.ink}">${t}</td></tr>`;
   const card=(c,title,sub,inner)=>`<td width="50%" style="vertical-align:top;padding:0 5px 10px"><table width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:#fff;border:1px solid ${C.line};border-left:4px solid ${c};padding:11px 13px">
       <div style="${F}font-size:13px;font-weight:700;color:${c};border-bottom:2px solid ${c};padding-bottom:5px;margin-bottom:7px">${title}${sub?`<span style="float:right;font-weight:400;color:${C.ink2};font-size:11.5px">${sub}</span>`:""}</div>${inner}</td></tr></table></td>`;
-  const li=t=>`<div style="${F}font-size:12.5px;color:#222824;line-height:1.55;margin:3px 0">· ${inline(t)}</div>`;
+  const li=t=>{const m=t.match(/^\s*P([123])\s+/);const pc={"1":C.mine,"2":C.prog,"3":C.other};return `<div style="${F}font-size:12.5px;color:#222824;line-height:1.55;margin:3px 0">${m?`<span style="display:inline-block;font-size:10.5px;font-weight:700;color:#fff;background:${pc[m[1]]};padding:0 5px;border-radius:2px;margin-right:4px">P${m[1]}</span>`:"· "}${inline(m?t.slice(m[0].length):t)}</div>`};
   const grid=cells=>{let h="";for(let i=0;i<cells.length;i+=2)h+=`<tr>${cells[i]}${cells[i+1]||'<td width="50%"></td>'}</tr>`;return `<tr><td style="padding:0 17px"><table width="100%" cellpadding="0" cellspacing="0">${h}</table></td></tr>`};
   let body=header+alert;
   const done=secs.find(s=>s.title.startsWith("✅"));const doneItems=done?done.text.split("\n").filter(l=>/^\s*[-*] /.test(l)).map(l=>l.replace(/^\s*[-*]\s+/,"")):[];
-  if(doneItems.length){body+=h2("오늘 한 일 <span style=\"font-weight:400;font-size:12px;color:"+C.ink2+"\">16:00 마감 기준</span>");body+=`<tr><td style="padding:0 22px"><table width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:#fff;border:1px solid ${C.line};border-left:4px solid ${C.wait};padding:10px 14px">${doneItems.map(li).join("")}</td></tr></table></td></tr>`}
+  const doneParts=done?done.text.split(/\n(?=### )/).slice(1):[];
+  if(doneParts.length){body+=h2("오늘 한 일 <span style=\"font-weight:400;font-size:12px;color:"+C.ink2+"\">16:00 마감 기준</span>");body+=grid(doneParts.map(p=>{const t=((p.match(/^### (.*)/)||[])[1]||"").trim();const it=p.split("\n").filter(l=>/^\s*[-*] /.test(l)).map(l=>l.replace(/^\s*[-*]\s+/,""));return card(catColor(t),esc(t.replace(/^\S+\s/,"")),`${it.length}건`,it.map(li).join(""))}))}
+  else if(doneItems.length){body+=h2("오늘 한 일 <span style=\"font-weight:400;font-size:12px;color:"+C.ink2+"\">16:00 마감 기준</span>");body+=`<tr><td style="padding:0 22px"><table width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:#fff;border:1px solid ${C.line};border-left:4px solid ${C.wait};padding:10px 14px">${doneItems.map(li).join("")}</td></tr></table></td></tr>`}
   if(cats.length){body+=h2("Work to do");body+=grid(cats.map(k=>card(k.c,esc(k.title.replace(/^\S+\s/,"")),`${k.items.length}건`,k.items.map(li).join(""))))}
   // pipeline
   const sortR=a=>a.slice().sort((x,y)=>(isOver(y)-isOver(x))||((y["경과일"]||0)-(x["경과일"]||0)));
@@ -420,7 +427,7 @@ function mailHtml(){
   const pcol=(k,t,c)=>{const l=sortR(by(k));return `<td width="33%" style="vertical-align:top;padding:0 5px"><table width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:#fff;border:1px solid ${C.line};border-left:4px solid ${c};padding:10px 12px">
       <div style="${F}font-size:13px;font-weight:700;color:${c};padding-bottom:4px">${t}<span style="float:right;font-weight:400;color:${C.ink2};font-size:11.5px">${l.length}건</span></div>${l.map(pcard).join("")||`<div style="${F}font-size:12px;color:${C.ink2}">없음</div>`}</td></tr></table></td>`};
   body+=h2("영문라벨·QC 파이프라인");
-  body+=`<tr><td style="padding:0 17px"><table width="100%" cellpadding="0" cellspacing="0"><tr>${pcol("mine","내 조치 필요",C.mine)}${pcol("joseph","조셉 회신 대기",C.wait)}${pcol("vendor","업체·동료 회신 대기",C.prog)}</tr></table></td></tr>`;
+  body+=`<tr><td style="padding:0 17px"><table width="100%" cellpadding="0" cellspacing="0"><tr>${pcol("mine","처리 필요",C.mine)}${pcol("joseph","QC 검토 중",C.wait)}${pcol("vendor","회신 대기 (브랜드사·동료)",C.prog)}</tr></table></td></tr>`;
   // process table
   const prog=act.slice().sort((a,b)=>(isOver(b)-isOver(a))||(stepIdx(a)-stepIdx(b)));
   const stepsCells=r=>{const si=stepIdx(r);return STEP_SHORT.map((s,i)=>`<td style="${F}font-size:10px;text-align:center;padding:3px 2px;white-space:nowrap;background:${i===si?C.ink:i<si?"#D5DED7":"#EEF0EC"};color:${i===si?"#fff":i<si?C.wait:"#9AA29C"};font-weight:${i===si?700:400}">${i+1} ${s}</td>`).join('<td style="width:2px"></td>')};
@@ -439,7 +446,7 @@ function mailText(){
   const secs=sections(state.board), today=secs.find(s=>s.title.startsWith("📌"));
   const out=["[데일리 업무 보고] "+(boardDateISO()?isoLabel(boardDateISO()):"")];
   if(today) for(const p of today.text.split(/\n(?=### )/).slice(1)){const t=((p.match(/^### (.*)/)||[])[1]||"");const it=p.split("\n").filter(l=>/^\s*[-*] /.test(l)).map(l=>"- "+l.replace(/^\s*[-*]\s+/,"").replace(/\*\*/g,""));if(it.length)out.push("",`■ ${t}`,...it)}
-  out.push("","■ 영문라벨 진행");state.rows.filter(r=>!["완료","다른 담당자"].includes(r["차례"])).forEach(r=>out.push(`- [${r["차례"]}·${r["단계"]||"-"}] ${r["건"]} — ${r["대기 상대"]||""} (${r["경과일"]||0}일)`));
+  out.push("","■ 영문라벨 진행");state.rows.filter(r=>!["완료","다른 담당자"].includes(r["차례"])).forEach(r=>out.push(`- [${TURN[r["차례"]]||r["차례"]}·${r["단계"]||"-"}] ${r["건"]} — ${r["대기 상대"]||""}`));
   return out.join("\n");
 }
 async function copyMail(){
@@ -531,7 +538,7 @@ function renderDay(iso){
   $("summary").innerHTML=bar;
   
   if(!d){$("todayBoard").innerHTML=`<div class="missbox">이 날짜의 기록이 없습니다. 주말이거나 기록 시작(7/1) 이전일 수 있습니다.</div>`;$("sUrgent").textContent="–";return}
-  if(d.color==="red"){$("todayBoard").innerHTML=`<div class="missbox">⚠️ <b>${lab}</b> 리포트가 누락된 날입니다. 필요하면 채팅에서 "${+mo}/${+da} 보충해줘"라고 요청하세요.</div>`;$("sUrgent").textContent="–";return}
+  if(d.color==="red"){$("todayBoard").innerHTML=`<div class="missbox">이 날짜의 기록이 없습니다.</div>`;$("sUrgent").textContent="–";return}
   if(d.color==="gray"){$("todayBoard").innerHTML=`<div class="missbox" style="border-left-color:#B8BEB8;background:#fff">${esc(d.label)} — 휴일입니다.</div>`;$("sUrgent").textContent="–";return}
   const groups={};
   for(const it of d.items){const m=it.match(/^`([^`]+)`\s*(.*)$/);const cat=m?m[1]:"기타";(groups[cat]=groups[cat]||[]).push(m?m[2]:it)}
