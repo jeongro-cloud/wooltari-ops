@@ -172,7 +172,7 @@ footer{margin-top:34px;font-size:12px;color:var(--ink-2)}
   <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--ink);color:#F2F3F0"><b>메일 본문 미리보기 · 복사됨</b>
    <span><button id="mpCopy" style="font:inherit;font-size:12.5px;background:#F2F3F0;color:var(--ink);border:0;border-radius:3px;padding:6px 12px;cursor:pointer;margin-right:6px">다시 복사</button><button id="mpClose" style="font:inherit;font-size:12.5px;background:transparent;color:#E6E9E5;border:1px solid #3F4843;border-radius:3px;padding:6px 12px;cursor:pointer">닫기</button></span></div>
   <div id="mailPrev" style="max-height:75vh;overflow:auto"></div>
-  <div style="padding:10px 16px;font-size:12px;color:var(--ink-2)">Gmail·Outlook 본문에 Ctrl+V 하면 대시보드처럼 색·배지가 있는 텍스트로 들어갑니다(편집 가능). 서식 없이 넣으려면 Ctrl+Shift+V.</div>
+  <div style="padding:10px 16px;font-size:12px;color:var(--ink-2)">Gmail·Outlook 본문에 Ctrl+V 하면 대시보드처럼 칸·색·배지 그대로 들어가며, 글자는 메일에서 바로 고칠 수 있습니다. 서식 없이 넣으려면 Ctrl+Shift+V.</div>
  </div></div>
 <div class="drawer-bg" id="dbg"></div>
 <aside class="drawer" id="drawer"><div class="dhead"><div><h3 id="dTitle">메일</h3><div class="ds" id="dSub"></div></div><div style="display:flex;gap:6px"><button id="dOpenG" title="Gmail에서 열기">Gmail</button><button id="dClose">닫기 ✕</button></div></div><div class="dbody" id="dBody"></div></aside>
@@ -391,24 +391,32 @@ function mailData(){
 const plain=s=>String(s||"").replace(/\\([\[\]<>{}|^$~`\\*])/g,"$1").replace(/\*\*/g,"").replace(/`/g,"").replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g,"$1");
 function mailHtml(){
   const d=mailData();
-  const F="font-family:'Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif;font-size:13px;line-height:1.6;color:#222;";
-  const C={ink:"#161A18",mine:"#8C1D18",wait:"#2F5D50",prog:"#7A5C10",done:"#3B4A42",blue:"#2B4A7A",violet:"#5A3F7A",other:"#6B716C"};
+  const FF="font-family:'Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif;";
+  const C={ink:"#161A18",ink2:"#4A524D",paper:"#E4E7E3",line:"#CDD3CD",mine:"#8C1D18",wait:"#2F5D50",prog:"#7A5C10",done:"#3B4A42",blue:"#2B4A7A",violet:"#5A3F7A",other:"#6B716C"};
   const cc=t=>/영문라벨/.test(t)?C.blue:/QC/.test(t)?C.mine:/견적/.test(t)?C.prog:/업체/.test(t)?C.wait:/호주/.test(t)?C.blue:/미팅|축제/.test(t)?C.violet:C.done;
-  const PB={"1":["#8C1D18","우선 과제"],"2":["#7A5C10","이번 주"],"3":["#6B716C","모니터링"]};
-  const badge=p=>`<span style="display:inline-block;background:${PB[p][0]};color:#fff;font-size:11px;font-weight:700;padding:0 6px;border-radius:3px;margin-right:6px">P${p}</span>`;
-  const item=i=>{const p=d.pr(i);const body=p?i.replace(/^\s*P[123]\s+/,""):i;return `<div style="${F}margin:3px 0 3px 2px">${p?badge(p):"• "}${inline(body)}</div>`};
-  const cat=c=>`<div style="${F}margin:12px 0 4px;padding-left:8px;border-left:4px solid ${cc(c.t)};font-weight:700;color:${cc(c.t)}">${esc(c.t)} <span style="font-weight:400;color:#777;font-size:12px">${c.it.length}건</span></div>${c.it.map(item).join("")}`;
-  const h2=t=>`<div style="${F}font-size:15px;font-weight:700;color:${C.ink};margin:22px 0 4px;padding-bottom:4px;border-bottom:2px solid ${C.ink}">${t}</div>`;
-  const num=(n,l,c)=>`<span style="margin-right:16px"><b style="font-size:18px;color:${c}">${n}</b> <span style="color:#555">${l}</span></span>`;
-  let h=`<div style="${F}">`;
-  h+=`<div style="${F}font-size:18px;font-weight:700;color:${C.ink}">데일리 업무 보고 <span style="font-size:13px;font-weight:400;color:#555">· 상품개발 이정로 · ${esc(d.dateLab)}</span></div>`;
-  h+=`<div style="${F}margin:8px 0 0">${num(d.cnt("1"),"P1 우선 과제",C.mine)}${num(d.cnt("2"),"P2 이번 주",C.prog)}${num(d.cnt("3"),"P3 모니터링",C.other)}</div>`;
-  h+=`<div style="${F}margin:2px 0 0">${num(d.by("mine").length,"라벨 처리 필요",C.mine)}${num(d.by("joseph").length,"QC 검토 중",C.wait)}${num(d.by("vendor").length,"회신 대기",C.prog)}</div>`;
-  if(d.done.length) h+=h2("✅ 오늘 한 일 <span style='font-size:12px;font-weight:400;color:#777'>16:00 마감 기준</span>")+d.done.map(cat).join("");
-  if(d.todo.length) h+=h2("📌 Work to do")+d.todo.map(cat).join("");
-  const L=[["mine","처리 필요",C.mine],["joseph","QC 검토 중",C.wait],["vendor","회신 대기",C.prog]].filter(([k])=>d.by(k).length);
-  if(L.length){h+=h2("🏷️ 영문라벨 진행 현황");L.forEach(([k,t,c])=>{const l=d.by(k);h+=`<div style="${F}margin:12px 0 4px;padding-left:8px;border-left:4px solid ${c};font-weight:700;color:${c}">${t} <span style="font-weight:400;color:#777;font-size:12px">${l.length}건</span></div>`+l.map(r=>`<div style="${F}margin:3px 0 3px 2px">• <b>${esc(r["건"])}</b>${r["단계"]?` <span style="color:#777">(${esc(r["단계"])})</span>`:""} — ${esc(r["대기 상대"]||"")}</div>`).join("")})}
-  return h+"</div>";
+  const PB={"1":C.mine,"2":C.prog,"3":C.other};
+  const badge=p=>`<span style="${FF}display:inline-block;background:${PB[p]};color:#ffffff;font-size:10.5px;font-weight:700;line-height:16px;padding:0 5px;border-radius:2px;margin-right:5px;vertical-align:1px">P${p}</span>`;
+  const li=i=>{const p=d.pr(i);const body=p?i.replace(/^\s*P[123]\s+/,""):i;return `<tr><td style="${FF}font-size:12.5px;line-height:1.55;color:#222824;padding:4px 0;border-top:1px solid #EEF0EC">${p?badge(p):`<span style="color:${C.other}">•</span> `}${inline(body)}</td></tr>`};
+  const card=(title,color,count,rowsHtml)=>`<table width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid ${C.line};border-top:4px solid ${color};border-collapse:separate"><tr><td style="padding:9px 12px 8px">
+      <table width="100%" cellpadding="0" cellspacing="0"><tr><td style="${FF}font-size:13.5px;font-weight:700;color:${color};padding-bottom:5px">${title}</td><td align="right" style="${FF}font-size:11.5px;color:${C.ink2};padding-bottom:5px;white-space:nowrap">${count}</td></tr>${rowsHtml}</table></td></tr></table>`;
+  const grid=(cells,cols)=>{let h="";const w=Math.floor(100/cols);for(let i=0;i<cells.length;i+=cols){h+="<tr>";for(let j=0;j<cols;j++){const c=cells[i+j];h+=`<td width="${w}%" valign="top" style="padding:0 5px 10px">${c||""}</td>`}h+="</tr>"}return `<tr><td style="padding:0 17px"><table width="100%" cellpadding="0" cellspacing="0">${h}</table></td></tr>`};
+  const h2=(t,sub)=>`<tr><td style="padding:20px 22px 8px"><table cellpadding="0" cellspacing="0"><tr><td style="${FF}font-size:16px;font-weight:700;color:${C.ink}">${t}</td>${sub?`<td style="${FF}font-size:12px;color:${C.ink2};padding-left:8px">${sub}</td>`:""}</tr></table></td></tr>`;
+  const stat=(n,l,col)=>`<td valign="top" style="padding:10px 12px;border:1px solid #333B36;background:#1F2522"><div style="${FF}font-size:24px;font-weight:700;line-height:1.1;color:${col}">${n}</div><div style="${FF}font-size:11px;color:#B8BFB9;white-space:nowrap;padding-top:2px">${l}</div></td><td width="6"></td>`;
+  let b=`<tr><td style="background:${C.ink};padding:22px 22px 18px">
+    <div style="${FF}font-size:22px;font-weight:700;color:#F2F3F0">데일리 업무 보고</div>
+    <div style="${FF}font-size:12.5px;color:#A9B2AB;padding-top:2px">상품개발 이정로 · 기준일 <b style="color:#F2F3F0">${esc(d.dateLab)}</b></div>
+    <table cellpadding="0" cellspacing="0" style="margin-top:14px"><tr>
+      ${stat(d.cnt("1"),"P1 우선 과제","#F2C0B8")}${stat(d.cnt("2"),"P2 이번 주","#E3CF8F")}${stat(d.cnt("3"),"P3 모니터링","#CFD4CF")}${stat(d.by("mine").length,"라벨 처리 필요","#E8A79F")}${stat(d.by("joseph").length,"QC 검토 중","#9FC7B8")}${stat(d.by("vendor").length,"회신 대기","#D9C589")}
+    </tr></table></td></tr>`;
+  if(d.done.length){b+=h2("✅ 오늘 한 일","16:00 마감 기준");b+=grid(d.done.map(c=>card(esc(c.t),cc(c.t),`${c.it.length}건`,c.it.map(li).join(""))),2)}
+  if(d.todo.length){b+=h2("📌 Work to do",`우선 과제 ${d.cnt("1")} · 이번 주 ${d.cnt("2")} · 모니터링 ${d.cnt("3")}`);b+=grid(d.todo.map(c=>{const u=c.it.filter(i=>d.pr(i)==="1").length;return card(esc(c.t),cc(c.t),`${c.it.length}건${u?` · <b style="color:${C.mine}">P1 ${u}</b>`:""}`,c.it.map(li).join(""))}),2)}
+  const L=[["mine","처리 필요",C.mine],["joseph","QC 검토 중",C.wait],["vendor","회신 대기",C.prog]];
+  if(L.some(([k])=>d.by(k).length)){
+    b+=h2("🏷️ 영문라벨 진행 현황","누가 처리할 차례인지");
+    b+=grid(L.map(([k,t,c])=>{const l=d.by(k);return card(t,c,`${l.length}건`,l.length?l.map(r=>`<tr><td style="${FF}font-size:12px;line-height:1.5;color:#222824;padding:5px 0;border-top:1px solid #EEF0EC"><b>${esc(r["건"])}</b>${r["단계"]?`<br><span style="display:inline-block;font-size:10.5px;color:${C.ink2};border:1px solid ${C.line};border-radius:2px;padding:0 5px;margin:2px 0">${esc(r["단계"])}</span>`:""}<br>${esc(r["대기 상대"]||"")}</td></tr>`).join(""):`<tr><td style="${FF}font-size:12px;color:${C.ink2};padding:4px 0">없음</td></tr>`)}),3);
+  }
+  b+=`<tr><td style="padding:10px 22px 20px;${FF}font-size:11px;color:${C.ink2}">데일리 업무 보드 · https://jeongro-cloud.github.io/wooltari-ops/board/</td></tr>`;
+  return `<table width="100%" cellpadding="0" cellspacing="0" style="background:${C.paper}"><tr><td align="center" style="padding:14px 8px"><table width="780" cellpadding="0" cellspacing="0" style="max-width:780px;width:100%;background:${C.paper}">${b}</table></td></tr></table>`;
 }
 function mailText(){
   const d=mailData(), out=[`[데일리 업무 보고] ${d.dateLab} · 상품개발 이정로`,`우선 과제(P1) ${d.cnt("1")} · 이번 주(P2) ${d.cnt("2")} · 모니터링(P3) ${d.cnt("3")} | 영문라벨 처리 필요 ${d.by("mine").length} · QC 검토 중 ${d.by("joseph").length} · 회신 대기 ${d.by("vendor").length}`];
