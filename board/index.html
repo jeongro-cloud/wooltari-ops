@@ -278,7 +278,10 @@ function renderDone(secs){
   box.className="md";box.innerHTML=md2html(d.text.replace(/^##[^\n]*\n/,""));
 }
 const PRC={"1":"var(--mine)","2":"var(--prog)","3":"var(--other)"};
-function prBadge(i){const m=i.match(/^\s*\[?P([123])\]?\s*[·:\-]?\s*/);if(!m)return inline(i);return `<span class="tag" style="background:${PRC[m[1]]};margin-right:6px">P${m[1]}</span>`+inline(i.slice(m[0].length))}
+const DEP=l=>{const m=l.match(/^(\s*)[-*]\s+/);const w=m?m[1]:"";return (w.match(/\t/g)||[]).length+Math.floor(w.replace(/\t/g,"").length/2)};
+const itemsOf=p=>p.split("\n").filter(l=>/^\s*[-*] /.test(l)).map(l=>"\t".repeat(DEP(l))+l.replace(/^\s*[-*]\s+/,""));
+const depthOf=i=>(i.match(/^\t*/)||[""])[0].length;
+function prBadge(i){i=i.replace(/^\t+/,"");const m=i.match(/^\s*\[?P([123])\]?\s*[·:\-]?\s*/);if(!m)return inline(i);return `<span class="tag" style="background:${PRC[m[1]]};margin-right:6px">P${m[1]}</span>`+inline(i.slice(m[0].length))}
 function renderToday(secs){
   const today=secs.find(s=>s.title.startsWith("📌"));
   if(!today){$("todayBoard").innerHTML='<div class="empty">오늘 섹션이 아직 없습니다.</div>';return}
@@ -287,11 +290,11 @@ function renderToday(secs){
   for(const p of today.text.split(/\n(?=### )/).slice(1)){
     const title=((p.match(/^### (.*)/)||[])[1]||"").trim();
     const c=(CATC.find(([k])=>title.includes(k))||[,"var(--other)"])[1];
-    const items=p.split("\n").filter(l=>/^\s*[-*] /.test(l)).map(l=>l.replace(/^\s*[-*]\s+/,""));
+    const items=itemsOf(p);
     if(/슬랙/.test(title)&&(!items.length||/없음/.test(items.join(""))))continue;
-    const pr=i=>(i.match(/^\s*(?:\*\*)?\[?P([123])\]?/)||[])[1]||"9";items.sort((a,b)=>pr(a)-pr(b));const u=items.filter(i=>pr(i)==="1"||i.includes("🔴")).length; urgent+=u;
+    const pr=i=>(i.match(/^\s*(?:\*\*)?\[?P([123])\]?/)||[])[1]||"9";if(!items.some(i=>depthOf(i)>0))items.sort((a,b)=>pr(a)-pr(b));const u=items.filter(i=>pr(i)==="1"||i.includes("🔴")).length; urgent+=u;
     html+=`<div class="col" style="--c:${c}"><div class="col-head"><h3>${esc(title.replace(/^\S+\s/,""))}</h3><em>${items.length}건${u?` · P1 ${u}`:""}</em></div>
-      <div class="card">${items.length?items.map(i=>`<div class="li">${prBadge(i)}</div>`).join(""):'<div class="empty">없음</div>'}</div></div>`;
+      <div class="card">${items.length?items.map(i=>{const d=depthOf(i),grp=d<2&&!/^\t*\[?P[123]/.test(i)&&items.some(x=>depthOf(x)>d);return `<div class="li" style="margin-left:${d*14}px;${grp?"font-weight:650;color:var(--ink);"+(d===0?"border-bottom:1px solid var(--line);padding-bottom:2px;margin-top:6px":""):""}">${prBadge(i)}</div>`}).join(""):'<div class="empty">없음</div>'}</div></div>`;
   }
   $("todayBoard").innerHTML=html; $("sUrgent").textContent=urgent;
 }
@@ -380,7 +383,7 @@ function fromCache(){
 // ---------- mail copy ----------
 function mailData(){
   const secs=sections(state.board);
-  const grab=sec=>sec?sec.text.split(/\n(?=### )/).slice(1).map(p=>{const t=((p.match(/^### (.*)/)||[])[1]||"").trim().replace(/^\S+\s/,"");const it=p.split("\n").filter(l=>/^\s*[-*] /.test(l)).map(l=>l.replace(/^\s*[-*]\s+/,""));return {t,it}}).filter(c=>c.it.length&&!(/슬랙/.test(c.t)&&/없음/.test(c.it.join("")))):[];
+  const grab=sec=>sec?sec.text.split(/\n(?=### )/).slice(1).map(p=>{const t=((p.match(/^### (.*)/)||[])[1]||"").trim().replace(/^\S+\s/,"");const it=itemsOf(p);return {t,it}}).filter(c=>c.it.length&&!(/슬랙/.test(c.t)&&/없음/.test(c.it.join("")))):[];
   const done=grab(secs.find(s=>s.title.startsWith("✅"))), todo=grab(secs.find(s=>s.title.startsWith("📌")));
   const pr=i=>(i.match(/^\s*P([123])\s+/)||[])[1];
   const cnt=k=>todo.reduce((n,c)=>n+c.it.filter(i=>pr(i)===k).length,0);
@@ -397,7 +400,7 @@ function mailHtml(){
   const PB={"1":[C.mine,"#FBEAE8"],"2":[C.prog,"#FBF3DF"],"3":[C.other,"#EFF1EE"]};
   const badge=p=>`<span style="${FF}display:inline-block;color:${PB[p][0]};background:${PB[p][1]};border:1px solid ${PB[p][0]};font-size:10.5px;font-weight:700;line-height:15px;padding:0 4px;border-radius:2px;margin-right:5px">P${p}</span>`;
   const TD=`${FF}font-size:12.5px;line-height:1.6;color:#222;border:1px solid ${C.line};padding:6px 10px;vertical-align:top`;
-  const line=i=>{const p=d.pr(i);const body=p?i.replace(/^\s*P[123]\s+/,""):i;return `<div style="margin:2px 0">${p?badge(p):"· "}${inline(body)}</div>`};
+  const line=i=>{const dep=depthOf(i);i=i.replace(/^\t+/,"");const p=d.pr(i);const body=p?i.replace(/^\s*P[123]\s+/,""):i;const grp=!p&&dep<2;return `<div style="margin:2px 0 2px ${dep*14}px;${grp?"font-weight:700;":""}">${p?badge(p):(grp?"":"· ")}${inline(body)}</div>`};
   const table=(cats,head2)=>`<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:4px 0 0">
     <tr><td width="120" style="${TD}background:${C.head};font-weight:700;color:${C.ink2}">구분</td><td style="${TD}background:${C.head};font-weight:700;color:${C.ink2}">${head2}</td></tr>
     ${cats.map(c=>`<tr><td style="${TD}font-weight:700;color:${cc(c.t)};white-space:nowrap">${esc(c.t)}<div style="font-weight:400;color:${C.ink2};font-size:11.5px">${c.it.length}건</div></td><td style="${TD}">${c.it.map(line).join("")}</td></tr>`).join("")}</table>`;
