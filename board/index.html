@@ -280,7 +280,7 @@ function renderDone(secs){
   if(!d){box.innerHTML='<div class="empty">오늘 한 일이 아직 없습니다 (16:00 마감 기준 갱신).</div>';$("doneDate").textContent="";return}
   $("doneDate").textContent=(d.title.split("—")[1]||"").trim();
   const parts=d.text.split(/\n(?=### )/).slice(1);
-  if(parts.length){box.className="board";box.innerHTML=parts.map(p=>{const title=((p.match(/^### (.*)/)||[])[1]||"").trim();const c=(CATC.find(([k])=>title.includes(k))||[,"var(--other)"])[1];const items=p.split("\n").filter(l=>/^\s*[-*] /.test(l)).map(l=>l.replace(/^\s*[-*]\s+/,""));return `<div class="col" style="--c:${c}"><div class="col-head"><h3>${esc(title.replace(/^\S+\s/,""))}</h3><em>${vis.length}건</em></div><div class="card">${items.map(i=>`<div class="li">${inline(i)}</div>`).join("")}</div></div>`}).join("");return}
+  if(parts.length){box.className="board";box.innerHTML=parts.map(p=>{const title=((p.match(/^### (.*)/)||[])[1]||"").trim();const c=(CATC.find(([k])=>title.includes(k))||[,"var(--other)"])[1];const items=p.split("\n").filter(l=>/^\s*[-*] /.test(l)).map(l=>l.replace(/^\s*[-*]\s+/,""));return `<div class="col" style="--c:${c}"><div class="col-head"><h3>${esc(title.replace(/^\S+\s/,""))}</h3><em>${items.length}건</em></div><div class="card">${items.map(i=>`<div class="li">${inline(i)}</div>`).join("")}</div></div>`}).join("");return}
   box.className="md";box.innerHTML=md2html(d.text.replace(/^##[^\n]*\n/,""));
 }
 const PRC={"1":"var(--mine)","2":"var(--prog)","3":"var(--other)"};
@@ -306,7 +306,7 @@ function renderToday(secs){
     const items=itemsOf(p);const vis=items.filter(i=>!isClosed(i)),cl=items.filter(isClosed);
     if(/슬랙/.test(title)&&(!items.length||/없음/.test(items.join(""))))continue;
     const pr=i=>(i.match(/^\s*(?:\*\*)?\[?P([123])\]?/)||[])[1]||"9";if(!vis.some(i=>depthOf(i)>0))vis.sort((a,b)=>pr(a)-pr(b));const u=vis.filter(i=>pr(i)==="1"||i.includes("🔴")).length; urgent+=u;
-    html+=`<div class="col" style="--c:${c}"><div class="col-head"><h3>${esc(title.replace(/^\S+\s/,""))}</h3><em>${items.length}건${u?` · P1 ${u}`:""}</em></div>
+    html+=`<div class="col" style="--c:${c}"><div class="col-head"><h3>${esc(title.replace(/^\S+\s/,""))}</h3><em>${vis.length}건${u?` · P1 ${u}`:""}</em></div>
       <div class="card">${vis.length?vis.map(i=>{const d=depthOf(i),grp=d<2&&!/^\t*\[?P[123]/.test(i)&&vis.some(x=>depthOf(x)>d);const btn=isP(i)?`<button class="xbtn" title="진행 완료 → 종료" data-k="${esc(itemKey(i))}" data-t="${esc(i.replace(/^\t+/,"").slice(0,300))}">종료</button>`:"";return `<div class="li" style="margin-left:${d*14}px;${grp?"font-weight:650;color:var(--ink);"+(d===0?"border-bottom:1px solid var(--line);padding-bottom:2px;margin-top:6px":""):""}">${prBadge(i)}${btn}</div>`}).join(""):'<div class="empty">없음</div>'}${cl.length?`<details class="closedbox"><summary>✅ 종료 ${cl.length}건</summary>${cl.map(i=>`<div><span class="li">${inline(itemKey(i))}</span><button class="rbtn" data-k="${esc(itemKey(i))}">되돌리기</button></div>`).join("")}</details>`:""}</div></div>`;
   }
   $("todayBoard").innerHTML=html; $("sUrgent").textContent=urgent;
